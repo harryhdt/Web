@@ -13,7 +13,7 @@
 </script>
 
 <div
-	transition:blur={{ duration: 500, amount: 50 }}
+	transition:blur={{ duration: 300, amount: 25 }}
 	bind:this={target}
 	class="absolute bg-neutral-50 rounded-md shadow top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[calc(100%-32px)] max-w-5xl aspect-3/3 min-[420px]:aspect-square sm:aspect-video min-w-[192px] min-h-[144px] {className}"
 >
@@ -27,7 +27,7 @@
 		bind:this={dragTarget}
 		class="w-full h-10 bg-neutral-100 flex items-center justify-between px-2.5 relative rounded-t-md cursor-grab border-b border-neutral-200"
 	>
-		<h3 class="text-neutral-800 font-medium cursor-default">{title}</h3>
+		<h3 class="font-medium cursor-default text-neutral-800">{title}</h3>
 	</div>
 	<div
 		class="px-2.5 mt-2 overflow-auto h-[calc(100%-48px-16px)] max-[500px]:max-h-[60vh] flex flex-col {contentClass}"
