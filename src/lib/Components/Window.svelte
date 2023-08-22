@@ -20,7 +20,7 @@
 <div
 	transition:blur={{ duration: 300, amount: 25 }}
 	bind:this={target}
-	class="absolute bg-neutral-50 rounded-md shadow top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[calc(100%-32px)] max-w-5xl aspect-3/3 max-h-[80vh] min-[420px]:aspect-square sm:aspect-video min-w-[192px] min-h-[144px] overflow-hidden {className}"
+	class="absolute bg-neutral-50 rounded-md shadow top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[calc(100%-32px)] max-w-5xl aspect-3/3 max-h-[80vh] min-[420px]:aspect-square sm:aspect-video min-w-[256px] min-h-[400px] overflow-hidden {className}"
 >
 	<button
 		on:click|stopPropagation|preventDefault={onClose}
