@@ -4,14 +4,12 @@
 		style="grid-template-columns: repeat(auto-fill, minmax(216px, 1fr))"
 	>
 		<div class="bg-blue-700/80 p-2.5 shadow-md text-white rounded">
-			<h4 class="font-semibold">Fullstack Web (Standar)</h4>
+			<h4 class="font-semibold">Fullstack Web (Standard)</h4>
 			<ul class="list-disc ml-5 mt-0.5">
 				<li>PHP Laravel</li>
 				<li>MySQL / PostgreSQL</li>
-				<li>Inertia js</li>
-				<li>Svelte js</li>
-				<li>Alpine js</li>
-				<li>Tailwind css<br /><br /></li>
+				<li>Svelte x Inertia js or Alpine js</li>
+				<li>Tailwind css</li>
 			</ul>
 		</div>
 		<div class="bg-teal-700/80 p-2.5 shadow-md text-white rounded">
@@ -20,7 +18,7 @@
 				<li>Golang / Node JS</li>
 				<li>MySQL / PostgreSQL</li>
 				<li>SvelteKit</li>
-				<li>Tailwind css<br /><br /></li>
+				<li>Tailwind css</li>
 			</ul>
 		</div>
 		<div class="bg-orange-700/80 p-2.5 shadow-md text-white rounded">
@@ -30,14 +28,14 @@
 				<li>React (&amp; Next)</li>
 				<li>Alpine js</li>
 				<li>Tailwind css</li>
-				<li>Some UI Library<br /><br /></li>
+				<li>Some UI Library</li>
 			</ul>
 		</div>
 		<div class="bg-slate-700/80 p-2.5 shadow-md text-white rounded">
 			<h4 class="font-semibold">Frontend Mobile</h4>
 			<ul class="list-disc ml-5 mt-0.5">
 				<li>Flutter (Dart)</li>
-				<li>Capacitor (Javascript)<br /><br /></li>
+				<li>Capacitor (Javascript)</li>
 			</ul>
 		</div>
 		<div class="bg-indigo-700/80 p-2.5 shadow-md text-white rounded">
@@ -45,7 +43,7 @@
 			<ul class="list-disc ml-5 mt-0.5">
 				<li>PHP Laravel</li>
 				<li>Adonis JS</li>
-				<li>Goravel (Golang)<br /><br /></li>
+				<li>Goravel (Golang)</li>
 			</ul>
 		</div>
 		<div class="bg-lime-700/80 p-2.5 shadow-md text-white rounded">
@@ -54,7 +52,7 @@
 				<li>MySQL</li>
 				<li>PostgreSQL</li>
 				<li>SQLite</li>
-				<li>Some nosql DB<br /><br /></li>
+				<li>Some nosql DB</li>
 			</ul>
 		</div>
 		<div class="bg-cyan-700/80 p-2.5 shadow-md text-white rounded">
@@ -63,7 +61,7 @@
 				<li>Digitalocean</li>
 				<li>Domainesia</li>
 				<li>Netlify &amp; Vercel</li>
-				<li>Supabase &amp; Firebase<br /><br /></li>
+				<li>Supabase &amp; Firebase</li>
 			</ul>
 		</div>
 		<div class="bg-pink-700/80 p-2.5 shadow-md text-white rounded">
