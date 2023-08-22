@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-y-4 flex-grow">
+<div class="flex flex-col gap-y-4 flex-grow pb-10">
 	<div
 		class="grid grid-cols-4 gap-2.5"
 		style="grid-template-columns: repeat(auto-fill, minmax(216px, 1fr))"

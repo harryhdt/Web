@@ -17,17 +17,17 @@
 	bind:this={target}
 	class="absolute bg-neutral-50 rounded-md shadow top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[calc(100%-32px)] max-w-5xl aspect-3/3 min-[420px]:aspect-square sm:aspect-video min-w-[192px] min-h-[144px] {className}"
 >
+	<button
+		on:click|stopPropagation|preventDefault={onClose}
+		class="absolute right-2.5 top-1.5 bg-red-600 border border-red-600 text-white rounded-full flex items-center justify-center w-7 h-7 hover:bg-red-700 transition-all duration-200 active:scale-95 z-20"
+	>
+		<IconClose class="w-5 h-5" />
+	</button>
 	<div
 		bind:this={dragTarget}
-		class="w-full h-10 bg-neutral-100 flex items-center px-2.5 relative rounded-t-md cursor-grab border-b border-neutral-200"
+		class="w-full h-10 bg-neutral-100 flex items-center justify-between px-2.5 relative rounded-t-md cursor-grab border-b border-neutral-200"
 	>
 		<h3 class="text-neutral-800 font-medium cursor-default">{title}</h3>
-		<button
-			on:click|stopPropagation|preventDefault={onClose}
-			class="absolute right-2.5 bg-red-600 border border-red-600 text-white rounded-full flex items-center justify-center w-7 h-7 hover:bg-red-700 transition-all duration-200 hover:scale-95 z-20"
-		>
-			<IconClose class="w-5 h-5" />
-		</button>
 	</div>
 	<div
 		class="px-2.5 mt-2 overflow-auto h-[calc(100%-48px-16px)] max-[500px]:max-h-[60vh] flex flex-col {contentClass}"
