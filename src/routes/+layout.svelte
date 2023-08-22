@@ -89,7 +89,7 @@
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
 	class="relative h-screen overflow-hidden select-none text-neutral-600 font-app text-[15px]"
-	on:contextmenu|preventDefault={null}
+	on:contextmenu|preventDefault={() => console.warn('DISABLED BY SYSTEM :)')}
 >
 	<div class="h-7 bg-black/20 sticky top-0 flex items-center px-2.5">
 		<div class="hidden mr-auto sm:block">
