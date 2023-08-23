@@ -1,3 +1,5 @@
+import { writable } from 'svelte/store';
+
 // place files you want to import through the `$lib` alias in this folder.
 export {
 	appWallpaper,
@@ -5,3 +7,5 @@ export {
 	aboutIllustration,
 	aboutIllustrationPlaceholder
 } from './images';
+
+export const incZIndex = writable(1);

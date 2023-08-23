@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { incZIndex } from '$lib';
 	import IconClose from '$lib/Icons/IconClose.svelte';
 	import Moveable from 'svelte-moveable';
 	import { blur } from 'svelte/transition';
@@ -14,7 +15,15 @@
 
 	setTimeout(() => {
 		targetRef?.request('resizable', {}, true);
+		target.onclick = () => {
+			target.style.zIndex = $incZIndex.toString();
+			$incZIndex++;
+		};
 	}, 200);
+	setTimeout(() => {
+		target.style.zIndex = ($incZIndex + 5).toString();
+		$incZIndex += 5;
+	}, 100);
 </script>
 
 <div
@@ -53,6 +62,8 @@
 	throttleDragRotate={0}
 	on:drag={({ detail: e }) => {
 		e.target.style.transform = e.transform;
+		e.target.style.zIndex = ($incZIndex + 1).toString();
+		$incZIndex++;
 	}}
 	resizable
 	keepRatio={false}
