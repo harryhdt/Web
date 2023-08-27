@@ -9,7 +9,6 @@
 	import IconBattery from '$lib/Icons/IconBattery.svelte';
 	import IconContact from '$lib/Icons/IconContact.svelte';
 	import IconPortfolio from '$lib/Icons/IconPortfolio.svelte';
-	import IconAnalytics from '$lib/Icons/IconAnalytics.svelte';
 	import IconWiFi from '$lib/Icons/IconWiFi.svelte';
 	import IconSpeaker from '$lib/Icons/IconSpeaker.svelte';
 	import IconSkill from '$lib/Icons/IconSkill.svelte';

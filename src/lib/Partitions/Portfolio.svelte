@@ -1,7 +1,3 @@
-<script lang="ts">
-	import IconImage from '$lib/Icons/IconImage.svelte';
-</script>
-
 <div class="flex flex-col flex-grow pb-10">
 	<div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(216px, 1fr))">
 		<div class="flex flex-col border rounded bg-neutral-100 border-neutral-200 p-2.5">
