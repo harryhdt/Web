@@ -13,7 +13,9 @@
 			</div>
 			<div class="flex flex-col flex-grow mt-2">
 				<h5 class="font-semibold text-neutral-800">My To Do</h5>
-				<p class="mb-2 text-sm">is a Simple To Do App, with support cross platform.</p>
+				<p class="mb-2 text-sm">
+					is a Simple To Do App, with support cross platform. Write your To Do now.
+				</p>
 				<div class="grid grid-cols-2 mt-auto text-center gap-x-1">
 					<a
 						class="px-2.5 py-1.5 text-white transition-all duration-200 bg-blue-600 rounded hover:bg-blue-800/90 active:scale-95"

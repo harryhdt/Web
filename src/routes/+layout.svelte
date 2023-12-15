@@ -126,9 +126,9 @@
 					class="w-8 sm:w-11 h-8 sm:h-11 flex-shrink-0 mb-1 {app.iconClass}"
 				/>
 				<span class="text-sm whitespace-nowrap">{app.name}</span>
-				<div class="flex items-center justify-center h-5 mt-1 gap-x-1">
+				<div class="flex items-center justify-center h-5 mt-1 gap-x-1.5">
 					{#each windows.filter((w) => w.slug === app.slug) as _}
-						<div class="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+						<div class="w-1 h-1 bg-blue-600 rounded-full ring-2 ring-white" />
 					{/each}
 				</div>
 			</button>
