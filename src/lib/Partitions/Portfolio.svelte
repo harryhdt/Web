@@ -42,7 +42,7 @@
 				<!-- <IconImage class="w-16 h-16 opacity-50" /> -->
 			</div>
 			<div class="flex flex-col flex-grow mt-2">
-				<h5 class="font-semibold text-neutral-800">Live Preview</h5>
+				<h5 class="font-semibold text-neutral-800">Link Preview</h5>
 				<p class="mb-2 text-sm">
 					Get link preview like title, description, favicon, thumbnail and etc.
 				</p>
@@ -56,6 +56,36 @@
 						class="px-2.5 py-1.5 text-white transition-all duration-200 rounded bg-amber-600 hover:bg-amber-700/90 active:scale-95"
 						target="_blank"
 						href="https://github.com/harryhdt/LinkPreview">Source</a
+					>
+				</div>
+			</div>
+		</div>
+		<div class="flex flex-col border rounded bg-neutral-100 border-neutral-200 p-2.5">
+			<div
+				class="relative flex items-center justify-center w-full aspect-[3/2] bg-neutral-200 rounded overflow-hidden"
+			>
+				<img
+					src="https://cdn.harryhdt.dev/logo-bikin-qr.webp"
+					class="absolute object-contain w-full h-full scale-90"
+					alt="Link Preview"
+				/>
+				<!-- <IconImage class="w-16 h-16 opacity-50" /> -->
+			</div>
+			<div class="flex flex-col flex-grow mt-2">
+				<h5 class="font-semibold text-neutral-800">Bikin QR</h5>
+				<p class="mb-2 text-sm">
+					Bikin QR Code untuk link atau teks kamu secara bebas dan gratis. Coba sekarang !!!
+				</p>
+				<div class="grid grid-cols-2 mt-auto text-center gap-x-1">
+					<a
+						class="px-2.5 py-1.5 text-white transition-all duration-200 bg-blue-600 rounded hover:bg-blue-800/90 active:scale-95"
+						target="_blank"
+						href="https://bikin-qr.harryhdt.dev">Demo</a
+					>
+					<a
+						class="px-2.5 py-1.5 text-white transition-all duration-200 rounded bg-amber-600 hover:bg-amber-700/90 active:scale-95"
+						target="_blank"
+						href="https://github.com/harryhdt/bikin-qr">Source</a
 					>
 				</div>
 			</div>
