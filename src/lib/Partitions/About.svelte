@@ -20,12 +20,12 @@
 		</div>
 	</div>
 	<h3 class="text-2xl font-semibold">Harry Hidayat</h3>
-	<div class="space-y-2.5">
+	<div class="space-y-2.5 text-base">
 		<p>
 			Hello There,
 			<br />
-			I am Harry Hidayat, a Fullstack Software Engineer. I have been programming since 2020. Especially
-			on Web and Mobile Development.
+			I am Harry Hidayat, a Software Engineer. I have been programming since 2020. Especially on Web
+			and Mobile Development.
 		</p>
 		<p>
 			Currently (Sep, 2023), I work as Full time Software Engineer, totally coding for web, yaa for
