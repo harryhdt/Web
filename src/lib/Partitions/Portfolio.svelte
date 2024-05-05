@@ -110,7 +110,7 @@
 					<a
 						class="px-2.5 py-1.5 text-white transition-all duration-200 bg-blue-600 rounded hover:bg-blue-800/90 active:scale-95"
 						target="_blank"
-						href="https://classroom-colors.harryhdt.dev">Demo</a
+						href="https://classrooms-color.harryhdt.dev">Demo</a
 					>
 					<a
 						class="px-2.5 py-1.5 text-white transition-all duration-200 rounded bg-amber-600 hover:bg-amber-700/90 active:scale-95"
