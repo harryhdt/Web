@@ -1,21 +1,19 @@
 <script lang="ts">
-	import { aboutIllustration, aboutIllustrationPlaceholder } from '$lib';
-	import { useLazyImage as lazyImage } from 'svelte-lazy-image';
+	// import { aboutIllustration, aboutIllustrationPlaceholder } from '$lib';
+	// import { useLazyImage as lazyImage } from 'svelte-lazy-image';
 </script>
 
 <div
-	class="flex flex-col items-center justify-center flex-grow w-full max-w-lg px-6 pt-6 pb-10 mx-auto space-y-4 text-center sm:px-10"
+	class="flex flex-col items-center justify-center w-full max-w-lg px-6 pt-6 pb-10 mx-auto space-y-4 text-center grow sm:px-10"
 >
 	<div>
 		<div
 			class="relative mx-auto overflow-hidden border-4 rounded-full bg-neutral-100 border-neutral-200 w-28 h-28"
 		>
 			<img
-				src={aboutIllustrationPlaceholder}
-				data-src={aboutIllustration}
+				src="/harryhdt-illustration.jpeg"
 				alt="Harry Hidayat"
 				class="absolute inset-0 object-cover w-full h-full"
-				use:lazyImage
 			/>
 		</div>
 	</div>

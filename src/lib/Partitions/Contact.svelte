@@ -5,7 +5,7 @@
 	import IconTelegram from '$lib/Icons/IconTelegram.svelte';
 </script>
 
-<div class="flex flex-col flex-grow pb-10">
+<div class="flex flex-col grow pb-10">
 	<div
 		class="flex flex-wrap items-start justify-start gap-2 min-[500px]:gap-4 max-[500px]:[&>a]:w-[calc(50%-4px)]"
 	>

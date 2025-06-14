@@ -1,8 +1,8 @@
-<div class="flex flex-col flex-grow pb-10">
+<div class="flex flex-col grow pb-10">
 	<div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(216px, 1fr))">
 		<div class="flex flex-col border rounded bg-neutral-100 border-neutral-200 p-2.5">
 			<div
-				class="relative flex items-center justify-center w-full aspect-[3/2] bg-neutral-200 rounded overflow-hidden"
+				class="relative flex items-center justify-center w-full aspect-3/2 bg-neutral-200 rounded overflow-hidden"
 			>
 				<img
 					src="https://my-to-do.harryhdt.dev/apple-touch-icon-180x180.png"
@@ -11,7 +11,7 @@
 				/>
 				<!-- <IconImage class="w-16 h-16 opacity-50" /> -->
 			</div>
-			<div class="flex flex-col flex-grow mt-2">
+			<div class="flex flex-col grow mt-2">
 				<h5 class="font-semibold text-neutral-800">My To Do</h5>
 				<p class="mb-2 text-sm">
 					is a Simple To Do App, with support cross platform. Write your To Do now.
@@ -32,7 +32,7 @@
 		</div>
 		<div class="flex flex-col border rounded bg-neutral-100 border-neutral-200 p-2.5">
 			<div
-				class="relative flex items-center justify-center w-full aspect-[3/2] bg-neutral-200 rounded overflow-hidden"
+				class="relative flex items-center justify-center w-full aspect-3/2 bg-neutral-200 rounded overflow-hidden"
 			>
 				<img
 					src="https://cdn.harryhdt.dev/logo-link-preview.webp"
@@ -41,7 +41,7 @@
 				/>
 				<!-- <IconImage class="w-16 h-16 opacity-50" /> -->
 			</div>
-			<div class="flex flex-col flex-grow mt-2">
+			<div class="flex flex-col grow mt-2">
 				<h5 class="font-semibold text-neutral-800">Link Preview</h5>
 				<p class="mb-2 text-sm">
 					Get link preview like title, description, favicon, thumbnail and etc.
@@ -62,7 +62,7 @@
 		</div>
 		<div class="flex flex-col border rounded bg-neutral-100 border-neutral-200 p-2.5">
 			<div
-				class="relative flex items-center justify-center w-full aspect-[3/2] bg-neutral-200 rounded overflow-hidden"
+				class="relative flex items-center justify-center w-full aspect-3/2 bg-neutral-200 rounded overflow-hidden"
 			>
 				<img
 					src="https://cdn.harryhdt.dev/logo-bikin-qr.webp"
@@ -71,7 +71,7 @@
 				/>
 				<!-- <IconImage class="w-16 h-16 opacity-50" /> -->
 			</div>
-			<div class="flex flex-col flex-grow mt-2">
+			<div class="flex flex-col grow mt-2">
 				<h5 class="font-semibold text-neutral-800">Bikin QR</h5>
 				<p class="mb-2 text-sm">
 					Bikin QR Code untuk link atau teks kamu secara bebas dan gratis. Coba sekarang !!!
@@ -92,7 +92,7 @@
 		</div>
 		<div class="flex flex-col border rounded bg-neutral-100 border-neutral-200 p-2.5">
 			<div
-				class="relative flex items-center justify-center w-full aspect-[3/2] bg-neutral-200 rounded overflow-hidden"
+				class="relative flex items-center justify-center w-full aspect-3/2 bg-neutral-200 rounded overflow-hidden"
 			>
 				<img
 					src="https://cdn.harryhdt.dev/logo-classrooms-color.webp"
@@ -101,7 +101,7 @@
 				/>
 				<!-- <IconImage class="w-16 h-16 opacity-50" /> -->
 			</div>
-			<div class="flex flex-col flex-grow mt-2">
+			<div class="flex flex-col grow mt-2">
 				<h5 class="font-semibold text-neutral-800">Classrooms Color</h5>
 				<p class="mb-2 text-sm">
 					Buat kelas Anda yang penuh warna, nikmati suasana baru yang menyenangkan.

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import '../app.css';
 	import moment from 'moment';
-	import { useLazyImage as lazyImage } from 'svelte-lazy-image';
-	import { appWallpaper, appWallpaperPlaceholder } from '$lib';
+	// import { useLazyImage as lazyImage } from 'svelte-lazy-image';
+	// import { appWallpaper, appWallpaperPlaceholder } from '$lib';
 	import IconAbout from '$lib/Icons/IconAbout.svelte';
 	import Window from '$lib/Components/Window.svelte';
 	import About from '$lib/Partitions/About.svelte';
@@ -51,7 +51,7 @@
 			slug: 'contact',
 			icon: IconContact,
 			content: Contact,
-			iconClass: '!w-7 !h-7 sm:!w-10 sm:!h-10',
+			iconClass: 'w-7! h-7! sm:w-10! sm:h-10!',
 			class: '',
 			contentClass: ''
 		}
@@ -89,13 +89,13 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="relative h-screen overflow-hidden select-none text-neutral-600 font-app text-[15px]"
+	class="relative h-screen overflow-x-hidden select-none text-neutral-600 font-app text-[15px]"
 	oncontextmenu={(e) => {
 		e.preventDefault();
 		console.warn('DISABLED BY SYSTEM :)');
 	}}
 >
-	<div class="h-7 bg-black/20 sticky top-0 flex items-center px-2.5">
+	<div class="h-7 bg-black/20 sticky top-0 flex items-center px-2.5 w-full">
 		<div class="hidden mr-auto sm:block">
 			<span class="text-sm font-semibold text-white">harryhdt.dev</span>
 		</div>
@@ -114,19 +114,18 @@
 		</div>
 	</div>
 	<img
-		src={appWallpaperPlaceholder}
-		data-src={appWallpaper}
+		src="/wallpaper.jpg"
 		alt="Harry Hidayat Web Wallpaper"
-		class="absolute inset-0 object-cover w-full h-full -z-50"
-		use:lazyImage
+		class="fixed inset-0 object-cover w-full h-full -z-50"
+		style="filter: brightness(0.9);"
 	/>
 	<div class="p-5 space-y-5">
 		{#each apps as app (app.slug)}
 			<button
 				onclick={() => openWindow(app.slug)}
-				class="flex flex-col items-center justify-center w-20 h-20 text-white transition-all bg-transparent border border-transparent rounded-md active:bg-blue-200/20 active:border-blue-500 hover:scale-105"
+				class="flex flex-col items-center justify-center w-20 h-20 text-white transition-all bg-transparent border border-transparent rounded-md cursor-pointer active:bg-blue-200/20 active:border-blue-500 hover:scale-105 hover:bg-blue-500/10 hover:border-blue-500/40"
 			>
-				<app.icon class="w-8 sm:w-11 h-8 sm:h-11 flex-shrink-0 mb-1 {app.iconClass}" />
+				<app.icon class="w-8 sm:w-11 h-8 sm:h-11 shrink-0 mb-1 {app.iconClass}" />
 				<span class="text-sm whitespace-nowrap">{app.name}</span>
 				<div class="flex items-center justify-center h-5 mt-1 gap-x-1.5">
 					{#each windows.filter((w) => w.slug === app.slug) as _ (_.id)}

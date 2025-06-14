@@ -2,7 +2,7 @@
 	import { fly } from 'svelte/transition';
 </script>
 
-<div class="flex flex-col flex-grow pb-10 gap-y-4">
+<div class="flex flex-col grow pb-10 gap-y-4">
 	<div
 		class="grid grid-cols-4 gap-2.5"
 		style="grid-template-columns: repeat(auto-fill, minmax(216px, 1fr))"

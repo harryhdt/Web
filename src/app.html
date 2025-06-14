@@ -1,12 +1,81 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" style="overflow-x: hidden">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width" />
 		%sveltekit.head%
+
+		<style>
+			#loading {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				background-color: white;
+				z-index: 9999;
+				transition: opacity 0.25s ease-in-out;
+			}
+
+			.animate-spin-native {
+				animation: spinNative 1s infinite linear;
+			}
+
+			@keyframes spinNative {
+				from {
+					transform: rotate(0deg);
+				}
+				to {
+					transform: rotate(360deg);
+				}
+			}
+		</style>
 	</head>
-	<body data-sveltekit-preload-data="hover">
-		<div style="display: contents">%sveltekit.body%</div>
+	<body data-sveltekit-preload-data="hover" class="relative w-screen overflow-x-hidden">
+		<div id="app" style="display: contents; opacity: 0">%sveltekit.body%</div>
+		<div id="loading">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="44"
+				height="44"
+				viewBox="0 0 24 24"
+				class="animate-spin-native"
+			>
+				<g fill="none" fill-rule="evenodd">
+					<path
+						d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z"
+					/>
+					<path
+						fill="currentColor"
+						d="M12 4.5a7.5 7.5 0 1 0 0 15a7.5 7.5 0 0 0 0-15M1.5 12C1.5 6.201 6.201 1.5 12 1.5S22.5 6.201 22.5 12S17.799 22.5 12 22.5S1.5 17.799 1.5 12"
+						opacity="0.1"
+						stroke-width="0.6"
+						stroke="#fff"
+					/>
+					<path
+						fill="currentColor"
+						d="M12 4.5a7.46 7.46 0 0 0-5.187 2.083a1.5 1.5 0 0 1-2.075-2.166A10.46 10.46 0 0 1 12 1.5a1.5 1.5 0 0 1 0 3"
+						stroke-width="0.6"
+						stroke="#fff"
+					/>
+				</g>
+			</svg>
+		</div>
 	</body>
+	<script>
+		window.addEventListener('load', () => {
+			const loading = document.querySelector('#loading');
+			setTimeout(() => {
+				loading.style.opacity = 0;
+				document.querySelector('#app').style.opacity = 1;
+				setTimeout(() => {
+					loading.style.display = 'none';
+				}, 500);
+			}, 500);
+		});
+	</script>
 </html>
