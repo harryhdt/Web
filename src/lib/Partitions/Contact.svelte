@@ -5,7 +5,7 @@
 	import IconTelegram from '$lib/Icons/IconTelegram.svelte';
 </script>
 
-<div class="flex flex-col grow pb-10">
+<div class="flex flex-col pb-10 grow">
 	<div
 		class="flex flex-wrap items-start justify-start gap-2 min-[500px]:gap-4 max-[500px]:[&>a]:w-[calc(50%-4px)]"
 	>
@@ -13,6 +13,7 @@
 			href="mailto:mail@harryhdt.dev"
 			target="_blank"
 			class="flex flex-col items-center justify-center w-24 h-24 transition-all duration-200 border rounded bg-neutral-100 border-neutral-200 hover:bg-neutral-200/80 active:scale-95"
+			data-umami-event="Contact > Email link"
 		>
 			<IconMail class="w-16 h-16 text-[#c71610]" />
 			<span class="text-sm">Email</span>
@@ -21,6 +22,7 @@
 			href="https://t.me/harryhdt"
 			target="_blank"
 			class="flex flex-col items-center justify-center w-24 h-24 transition-all duration-200 border rounded bg-neutral-100 border-neutral-200 hover:bg-neutral-200/80 active:scale-95"
+			data-umami-event="Contact > Telegram link"
 		>
 			<IconTelegram class="w-16 h-16 text-[#0088cc]" />
 			<span class="text-sm">Telegram</span>
@@ -29,6 +31,7 @@
 			href="https://github.com/harryhdt"
 			target="_blank"
 			class="flex flex-col items-center justify-center w-24 h-24 transition-all duration-200 border rounded bg-neutral-100 border-neutral-200 hover:bg-neutral-200/80 active:scale-95"
+			data-umami-event="Contact > Github link"
 		>
 			<IconGithub class="w-16 h-16 text-[#171515]" />
 			<span class="text-sm">Github</span>
@@ -37,6 +40,7 @@
 			href="https://linkedin.com/in/harryhdt"
 			target="_blank"
 			class="flex flex-col items-center justify-center w-24 h-24 transition-all duration-200 border rounded bg-neutral-100 border-neutral-200 hover:bg-neutral-200/80 active:scale-95"
+			data-umami-event="Contact > Linkedin link"
 		>
 			<IconLinkedin class="w-16 h-16 text-[#0e76a8]" />
 			<span class="text-sm">Linkedin</span>

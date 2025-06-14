@@ -89,7 +89,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="relative h-screen overflow-x-hidden select-none text-neutral-600 font-app text-[15px]"
+	class="relative h-[100dvh] overflow-x-hidden select-none text-neutral-600 font-app text-[15px]"
 	oncontextmenu={(e) => {
 		e.preventDefault();
 		console.warn('DISABLED BY SYSTEM :)');
