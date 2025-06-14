@@ -124,6 +124,7 @@
 			<button
 				onclick={() => openWindow(app.slug)}
 				class="flex flex-col items-center justify-center w-20 h-20 text-white transition-all bg-transparent border border-transparent rounded-md cursor-pointer active:bg-blue-200/20 active:border-blue-500 hover:scale-105 hover:bg-blue-500/10 hover:border-blue-500/40"
+				data-umami-event="{app.name} button"
 			>
 				<app.icon class="w-8 sm:w-11 h-8 sm:h-11 shrink-0 mb-1 {app.iconClass}" />
 				<span class="text-sm whitespace-nowrap">{app.name}</span>
