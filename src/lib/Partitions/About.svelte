@@ -28,9 +28,8 @@
 			and Mobile Development.
 		</p>
 		<p>
-			Currently (Dec, 2023), I work as Full time Software Engineer, totally coding for web, yaa for
-			sure i learn every day, to make me grow and gain more experience. And always open to learn new
-			technology if it needed.
+			Currently (June, 2025), I work as Full time Software Engineer, totally coding for web, yaa for
+			sure i learn every day, to make me grow and gain more experience.
 		</p>
 	</div>
 </div>

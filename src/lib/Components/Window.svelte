@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { incZIndex } from '$lib';
 	import IconClose from '$lib/Icons/IconClose.svelte';
+	import { onMount } from 'svelte';
 	import Moveable from 'svelte-moveable';
 	import { blur } from 'svelte/transition';
 	let target: HTMLDivElement, dragTarget: HTMLDivElement;
-	let targetRef: any = null;
+
+	let targetRef: Moveable | null = null;
 
 	let className = '';
 
@@ -13,17 +15,27 @@
 	export let contentClass = '';
 	export let onClose: () => void;
 
-	setTimeout(() => {
-		targetRef?.request('resizable', {}, true);
-		target.onclick = () => {
-			target.style.zIndex = $incZIndex.toString();
-			$incZIndex++;
-		};
-	}, 200);
-	setTimeout(() => {
+	// setTimeout(() => {
+	// 	targetRef?.request?.('resizable', {}, true);
+	// 	target.onclick = () => {
+	// 		target.style.zIndex = $incZIndex.toString();
+	// 		$incZIndex++;
+	// 	};
+	// }, 200);
+	// setTimeout(() => {
+	// 	target.style.zIndex = ($incZIndex + 5).toString();
+	// 	$incZIndex += 5;
+	// }, 100);
+	onMount(() => {
 		target.style.zIndex = ($incZIndex + 5).toString();
 		$incZIndex += 5;
-	}, 100);
+		//
+		targetRef?.request?.('resizable', {}, true);
+		target.onclick = () => {
+			$incZIndex += 2;
+			target.style.zIndex = $incZIndex.toString();
+		};
+	});
 </script>
 
 <div

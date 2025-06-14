@@ -16,6 +16,8 @@
 	import Contact from '$lib/Partitions/Contact.svelte';
 	import Portfolio from '$lib/Partitions/Portfolio.svelte';
 
+	const { children } = $props();
+
 	const apps = [
 		{
 			name: 'About Me',
@@ -55,7 +57,7 @@
 		}
 	];
 
-	let windows: any[] = [];
+	let windows: ((typeof apps)[0] & { id: number })[] = $state([]);
 
 	const openWindow = (appSlug: string) => {
 		if (windows.filter((w) => w.slug === appSlug).length > 3) {
@@ -64,7 +66,7 @@
 		}
 		windows[windows.length] = {
 			id: new Date().getTime(),
-			...apps.find((app) => app.slug === appSlug)
+			...(apps.find((app) => app.slug === appSlug) as (typeof apps)[0])
 		};
 	};
 
@@ -72,8 +74,8 @@
 		windows = windows.filter((w) => w.id !== windowId);
 	};
 
-	let timeNow = '',
-		timeNowMobile = '';
+	let timeNow = $state(''),
+		timeNowMobile = $state('');
 	const getTimeNow = () => {
 		const now = moment();
 		timeNow = now.format('ddd MMM D h:mm:ss A');
@@ -85,10 +87,13 @@
 	getTimeNow();
 </script>
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="relative h-screen overflow-hidden select-none text-neutral-600 font-app text-[15px]"
-	on:contextmenu|preventDefault={() => console.warn('DISABLED BY SYSTEM :)')}
+	oncontextmenu={(e) => {
+		e.preventDefault();
+		console.warn('DISABLED BY SYSTEM :)');
+	}}
 >
 	<div class="h-7 bg-black/20 sticky top-0 flex items-center px-2.5">
 		<div class="hidden mr-auto sm:block">
@@ -116,25 +121,22 @@
 		use:lazyImage
 	/>
 	<div class="p-5 space-y-5">
-		{#each apps as app}
+		{#each apps as app (app.slug)}
 			<button
-				on:click={() => openWindow(app.slug)}
+				onclick={() => openWindow(app.slug)}
 				class="flex flex-col items-center justify-center w-20 h-20 text-white transition-all bg-transparent border border-transparent rounded-md active:bg-blue-200/20 active:border-blue-500 hover:scale-105"
 			>
-				<svelte:component
-					this={app.icon}
-					class="w-8 sm:w-11 h-8 sm:h-11 flex-shrink-0 mb-1 {app.iconClass}"
-				/>
+				<app.icon class="w-8 sm:w-11 h-8 sm:h-11 flex-shrink-0 mb-1 {app.iconClass}" />
 				<span class="text-sm whitespace-nowrap">{app.name}</span>
 				<div class="flex items-center justify-center h-5 mt-1 gap-x-1.5">
-					{#each windows.filter((w) => w.slug === app.slug) as _}
-						<div class="w-1 h-1 bg-blue-600 rounded-full ring-2 ring-white" />
+					{#each windows.filter((w) => w.slug === app.slug) as _ (_.id)}
+						<div class="w-1 h-1 bg-blue-600 rounded-full ring-2 ring-white"></div>
 					{/each}
 				</div>
 			</button>
 		{/each}
 	</div>
-	<slot />
+	{@render children()}
 	{#each windows as window (window.id)}
 		<Window
 			title={window.name ?? 'Untitled'}
@@ -142,7 +144,7 @@
 			class={window.class}
 			contentClass={window.contentClass}
 		>
-			<svelte:component this={window.content} />
+			<window.content />
 		</Window>
 	{/each}
 </div>
