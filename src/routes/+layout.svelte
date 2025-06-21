@@ -114,16 +114,16 @@
 		</div>
 	</div>
 	<img
-		src="/wallpaper.jpg"
+		src="/wallpaper-21june2025.webp"
 		alt="Harry Hidayat Web Wallpaper"
 		class="fixed inset-0 object-cover w-full h-full -z-50"
-		style="filter: brightness(0.9);"
+		style="filter: brightness(0.6);"
 	/>
 	<div class="p-5 space-y-5">
 		{#each apps as app (app.slug)}
 			<button
 				onclick={() => openWindow(app.slug)}
-				class="flex flex-col items-center justify-center w-20 h-20 text-white transition-all bg-transparent border border-transparent rounded-md cursor-pointer active:bg-blue-200/20 active:border-blue-500 hover:scale-105 hover:bg-blue-500/10 hover:border-blue-500/40"
+				class="flex flex-col items-center justify-center w-20 h-20 text-white transition-all bg-transparent border border-transparent rounded-md cursor-pointer active:bg-blue-200/20 active:border-blue-500 hover:scale-105 hover:bg-blue-500/50 hover:border-blue-500/70"
 				data-umami-event="{app.name} button"
 			>
 				<app.icon class="w-8 sm:w-11 h-8 sm:h-11 shrink-0 mb-1 {app.iconClass}" />
