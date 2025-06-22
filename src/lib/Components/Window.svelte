@@ -76,6 +76,11 @@
 	$effect(() => {
 		untrack(() => {
 			initMoveable();
+			//
+			const windowElm = document.getElementById('window-' + id) as HTMLDivElement;
+			if (windowElm) {
+				bringToTop(windowElm);
+			}
 		});
 	});
 </script>
