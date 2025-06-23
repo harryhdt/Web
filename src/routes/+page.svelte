@@ -2,6 +2,6 @@
 	<title>Harry Hidayat</title>
 	<meta
 		name="description"
-		content="a Fullstack Software Engineer. Since 2020. Especially on Web and Mobile Development"
+		content="a Fullstack Software Engineer. Programming is not about typing, it's about thinking."
 	/>
 </svelte:head>
