@@ -21,7 +21,7 @@
 						class="px-2.5 py-1.5 text-white transition-all duration-200 bg-blue-600 rounded hover:bg-blue-800/90 active:scale-95"
 						target="_blank"
 						data-umami-event="Portfolio > ooKit > Open"
-						href="https://ookit.pages.dev">Open</a
+						href="https://ookit.dev">Open</a
 					>
 				</div>
 			</div>
