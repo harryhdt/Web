@@ -13,3 +13,6 @@ pnpm-lock.yaml
 yarn.lock
 bun.lock
 bun.lockb
+
+# Public assets in static/ are not source (e.g. analytics.js runs directly in HTML)
+static/**

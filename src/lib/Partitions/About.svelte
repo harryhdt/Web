@@ -22,8 +22,8 @@
 		<p>
 			Hello There,
 			<br />
-			I am Harry Hidayat, a Software Engineer. I have been programming since 2020. Especially on Web
-			and Mobile Development.
+			I am Harry Hidayat, a Software Engineer. I have been programming since 2020. Especially on Web and
+			Mobile Development.
 		</p>
 		<p>
 			Currently (June, 2025), I work as Full time Software Engineer, totally coding for web, yaa for
