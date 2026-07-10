@@ -1,9 +1,10 @@
 <script lang="ts">
 	import '../app.css';
 	import moment from 'moment';
-	// import { useLazyImage as lazyImage } from 'svelte-lazy-image';
-	// import { appWallpaper, appWallpaperPlaceholder } from '$lib';
 	import IconAbout from '$lib/Icons/IconAbout.svelte';
+	import { currentWallpaper, wallpaperPreview, wallpaperLoading } from '$lib';
+	import ContextMenu from '$lib/Components/ContextMenu.svelte';
+	import WallpaperPicker from '$lib/Components/WallpaperPicker.svelte';
 	import Window from '$lib/Components/Window.svelte';
 	import About from '$lib/Partitions/About.svelte';
 	import IconBattery from '$lib/Icons/IconBattery.svelte';
@@ -24,7 +25,7 @@
 			slug: 'about',
 			icon: IconAbout,
 			content: About,
-			iconClass: '',
+			tile: 'bg-gradient-to-br from-blue-500 to-indigo-600',
 			class: '',
 			contentClass: ''
 		},
@@ -33,7 +34,7 @@
 			slug: 'skill',
 			icon: IconSkill,
 			content: Skill,
-			iconClass: '',
+			tile: 'bg-gradient-to-br from-violet-500 to-fuchsia-600',
 			class: '',
 			contentClass: ''
 		},
@@ -42,7 +43,7 @@
 			slug: 'portfolio',
 			icon: IconPortfolio,
 			content: Portfolio,
-			iconClass: '',
+			tile: 'bg-gradient-to-br from-orange-500 to-amber-500',
 			class: '',
 			contentClass: ''
 		},
@@ -51,7 +52,7 @@
 			slug: 'contact',
 			icon: IconContact,
 			content: Contact,
-			iconClass: 'w-7! h-7! sm:w-10! sm:h-10!',
+			tile: 'bg-gradient-to-br from-emerald-500 to-teal-600',
 			class: '',
 			contentClass: ''
 		}
@@ -85,17 +86,37 @@
 		}, 1000);
 	};
 	getTimeNow();
+
+	let menu = $state<{ x: number; y: number } | null>(null);
+	let pickerOpen = $state(false);
+
+	const openMenu = (x: number, y: number) => {
+		menu = { x, y };
+	};
+
+	const onContextMenu = (e: MouseEvent) => {
+		e.preventDefault();
+		const t = e.target as HTMLElement;
+		// Only open on the desktop background — not on windows, icons, or the taskbar.
+		if (t.closest('[id^="window-"]') || t.closest('button') || t.closest('[data-taskbar]')) {
+			menu = null; // close any open menu when right-clicking a window/icon/taskbar
+			return;
+		}
+		openMenu(e.clientX, e.clientY);
+	};
+
+	const menuItems = [
+		{ label: 'Refresh', onSelect: () => location.reload() },
+		{ label: 'Change Wallpaper', onSelect: () => (pickerOpen = true) }
+	];
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="relative h-[100dvh] overflow-x-hidden select-none text-neutral-600 font-app text-[15px]"
-	oncontextmenu={(e) => {
-		e.preventDefault();
-		console.warn('DISABLED BY SYSTEM :)');
-	}}
+	oncontextmenu={onContextMenu}
 >
-	<div class="h-7 bg-black/20 sticky top-0 flex items-center px-2.5 w-full">
+	<div data-taskbar class="h-7 bg-black/20 sticky top-0 flex items-center px-2.5 w-full">
 		<div class="hidden mr-auto sm:block">
 			<span class="text-sm font-semibold text-white">harryhdt.dev</span>
 		</div>
@@ -114,7 +135,8 @@
 		</div>
 	</div>
 	<img
-		src="/wallpaper-21june2025.webp"
+		id="wallpaper-img"
+		src={$wallpaperPreview ?? $currentWallpaper}
 		alt="Harry Hidayat Web Wallpaper"
 		class="fixed inset-0 object-cover w-full h-full -z-50"
 		style="filter: brightness(0.6);"
@@ -123,14 +145,18 @@
 		{#each apps as app (app.slug)}
 			<button
 				onclick={() => openWindow(app.slug)}
-				class="flex flex-col items-center justify-center w-20 h-20 text-white transition-all bg-transparent border border-transparent rounded-md cursor-pointer active:bg-blue-200/20 active:border-blue-500 hover:scale-105 hover:bg-blue-500/50 hover:border-blue-500/70"
+				class="flex w-20 cursor-pointer flex-col items-center justify-center transition-transform duration-150 hover:scale-105 active:scale-95"
 				data-umami-event="{app.name} button"
 			>
-				<app.icon class="w-8 sm:w-11 h-8 sm:h-11 shrink-0 mb-1 {app.iconClass}" />
-				<span class="text-sm whitespace-nowrap">{app.name}</span>
-				<div class="flex items-center justify-center h-5 mt-1 gap-x-1.5">
+				<div
+					class="flex h-14 w-14 items-center justify-center rounded-2xl shadow-2xl sm:h-16 sm:w-16 {app.tile}"
+				>
+					<app.icon class="h-7 w-7 text-white sm:h-8 sm:w-8" />
+				</div>
+				<span class="mt-1 whitespace-nowrap text-sm text-white drop-shadow">{app.name}</span>
+				<div class="mt-1 flex h-5 items-center justify-center gap-x-1.5">
 					{#each windows.filter((w) => w.slug === app.slug) as _ (_.id)}
-						<div class="w-1 h-1 bg-blue-600 rounded-full ring-2 ring-white"></div>
+						<div class="h-1 w-1 rounded-full bg-blue-600 ring-2 ring-white"></div>
 					{/each}
 				</div>
 			</button>
@@ -147,4 +173,22 @@
 			<window.content />
 		</Window>
 	{/each}
+
+	{#if menu}
+		<ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => (menu = null)} />
+	{/if}
+
+	{#if pickerOpen}
+		<WallpaperPicker onClose={() => (pickerOpen = false)} />
+	{/if}
+
+	{#if $wallpaperLoading}
+		<div
+			class="fixed inset-0 z-[150] flex items-center justify-center bg-black/20 pointer-events-none"
+		>
+			<div
+				class="h-10 w-10 animate-spin rounded-full border-4 border-white/30 border-t-white"
+			></div>
+		</div>
+	{/if}
 </div>

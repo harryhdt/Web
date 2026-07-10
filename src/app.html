@@ -48,6 +48,18 @@
 	</head>
 	<body data-sveltekit-preload-data="hover" class="relative w-screen overflow-x-hidden">
 		<div id="app" style="display: contents; opacity: 0">%sveltekit.body%</div>
+		<script>
+			// Apply the persisted wallpaper before first paint to avoid a flash of the
+			// default wallpaper on reload. The store in +layout.svelte reads the same
+			// value, so hydration stays consistent.
+			try {
+				var wp = localStorage.getItem('wallpaper');
+				if (wp) {
+					var el = document.getElementById('wallpaper-img');
+					if (el) el.setAttribute('src', wp);
+				}
+			} catch (e) {}
+		</script>
 		<div id="loading">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
