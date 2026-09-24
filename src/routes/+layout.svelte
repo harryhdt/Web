@@ -13,9 +13,11 @@
 	import IconWiFi from '$lib/Icons/IconWiFi.svelte';
 	import IconSpeaker from '$lib/Icons/IconSpeaker.svelte';
 	// import IconSkill from '$lib/Icons/IconSkill.svelte';
+	import IconTools from '$lib/Icons/IconTools.svelte';
 	// import Skill from '$lib/Partitions/Skill.svelte';
 	import Contact from '$lib/Partitions/Contact.svelte';
 	// import Portfolio from '$lib/Partitions/Portfolio.svelte';
+	import Tools from '$lib/Partitions/Tools.svelte';
 
 	const { children } = $props();
 
@@ -55,6 +57,15 @@
 			icon: IconContact,
 			content: Contact,
 			tile: 'bg-gradient-to-br from-emerald-500 to-teal-600',
+			class: '',
+			contentClass: ''
+		},
+		{
+			name: 'Tools',
+			slug: 'tools',
+			icon: IconTools,
+			content: Tools,
+			tile: 'bg-neutral-800',
 			class: '',
 			contentClass: ''
 		}
