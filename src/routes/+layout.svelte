@@ -8,6 +8,7 @@
 	import Window from '$lib/Components/Window.svelte';
 	import About from '$lib/Partitions/About.svelte';
 	import IconBattery from '$lib/Icons/IconBattery.svelte';
+	import IconBrowser from '$lib/Icons/IconBrowser.svelte';
 	import IconContact from '$lib/Icons/IconContact.svelte';
 	// import IconPortfolio from '$lib/Icons/IconPortfolio.svelte';
 	import IconWiFi from '$lib/Icons/IconWiFi.svelte';
@@ -15,6 +16,7 @@
 	// import IconSkill from '$lib/Icons/IconSkill.svelte';
 	import IconTools from '$lib/Icons/IconTools.svelte';
 	// import Skill from '$lib/Partitions/Skill.svelte';
+	import Browser from '$lib/Partitions/Browser.svelte';
 	import Contact from '$lib/Partitions/Contact.svelte';
 	// import Portfolio from '$lib/Partitions/Portfolio.svelte';
 	import Tools from '$lib/Partitions/Tools.svelte';
@@ -68,6 +70,15 @@
 			tile: 'bg-neutral-800',
 			class: '',
 			contentClass: ''
+		},
+		{
+			name: 'Browser',
+			slug: 'browser',
+			icon: IconBrowser,
+			content: Browser,
+			tile: 'bg-gradient-to-br from-violet-500 to-purple-700',
+			class: '',
+			contentClass: 'min-h-0'
 		}
 	];
 
