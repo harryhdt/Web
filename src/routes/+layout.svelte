@@ -9,13 +9,13 @@
 	import About from '$lib/Partitions/About.svelte';
 	import IconBattery from '$lib/Icons/IconBattery.svelte';
 	import IconContact from '$lib/Icons/IconContact.svelte';
-	import IconPortfolio from '$lib/Icons/IconPortfolio.svelte';
+	// import IconPortfolio from '$lib/Icons/IconPortfolio.svelte';
 	import IconWiFi from '$lib/Icons/IconWiFi.svelte';
 	import IconSpeaker from '$lib/Icons/IconSpeaker.svelte';
-	import IconSkill from '$lib/Icons/IconSkill.svelte';
-	import Skill from '$lib/Partitions/Skill.svelte';
+	// import IconSkill from '$lib/Icons/IconSkill.svelte';
+	// import Skill from '$lib/Partitions/Skill.svelte';
 	import Contact from '$lib/Partitions/Contact.svelte';
-	import Portfolio from '$lib/Partitions/Portfolio.svelte';
+	// import Portfolio from '$lib/Partitions/Portfolio.svelte';
 
 	const { children } = $props();
 
@@ -29,6 +29,7 @@
 			class: '',
 			contentClass: ''
 		},
+		/*
 		{
 			name: 'My Skill',
 			slug: 'skill',
@@ -47,6 +48,7 @@
 			class: '',
 			contentClass: ''
 		},
+		*/
 		{
 			name: 'Contact',
 			slug: 'contact',
