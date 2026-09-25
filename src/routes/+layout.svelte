@@ -10,6 +10,7 @@
 	import IconBattery from '$lib/Icons/IconBattery.svelte';
 	import IconBrowser from '$lib/Icons/IconBrowser.svelte';
 	import IconContact from '$lib/Icons/IconContact.svelte';
+	import IconGames from '$lib/Icons/IconGames.svelte';
 	// import IconPortfolio from '$lib/Icons/IconPortfolio.svelte';
 	import IconWiFi from '$lib/Icons/IconWiFi.svelte';
 	import IconSpeaker from '$lib/Icons/IconSpeaker.svelte';
@@ -18,6 +19,7 @@
 	// import Skill from '$lib/Partitions/Skill.svelte';
 	import Browser from '$lib/Partitions/Browser.svelte';
 	import Contact from '$lib/Partitions/Contact.svelte';
+	import Games from '$lib/Partitions/Games.svelte';
 	// import Portfolio from '$lib/Partitions/Portfolio.svelte';
 	import Tools from '$lib/Partitions/Tools.svelte';
 
@@ -77,6 +79,15 @@
 			icon: IconBrowser,
 			content: Browser,
 			tile: 'bg-gradient-to-br from-violet-500 to-purple-700',
+			class: '',
+			contentClass: 'min-h-0'
+		},
+		{
+			name: 'Games',
+			slug: 'games',
+			icon: IconGames,
+			content: Games,
+			tile: 'bg-gradient-to-br from-fuchsia-500 to-violet-700',
 			class: '',
 			contentClass: 'min-h-0'
 		}
