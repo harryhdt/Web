@@ -16,13 +16,15 @@
 	}
 
 	let { class: className = '', title, contentClass = '', onClose, children }: Props = $props();
+	let isMaximized = $state(false);
+	let previousStyle = '';
 
 	const bringToTop = (target: HTMLDivElement | HTMLElement | SVGElement) => {
 		$incZIndex += 2;
 		target.style.zIndex = String($incZIndex);
 	};
 
-	let moveable: Moveable;
+	let moveable: Moveable | null = null;
 	const initMoveable = () => {
 		const target = document.getElementById('window-' + id) as HTMLDivElement;
 		const dragTarget = target?.querySelector('.drag-target') as HTMLDivElement;
@@ -73,6 +75,36 @@
 			});
 	};
 
+	const toggleMaximize = () => {
+		const target = document.getElementById('window-' + id) as HTMLDivElement | null;
+		if (!target) return;
+
+		moveable?.destroy();
+		moveable = null;
+		if (isMaximized) {
+			target.style.cssText = previousStyle;
+			isMaximized = false;
+			initMoveable();
+		} else {
+			previousStyle = target.style.cssText;
+			Object.assign(target.style, {
+				top: '28px',
+				left: '0',
+				width: '100%',
+				height: 'calc(100dvh - 28px)',
+				transform: 'none',
+				maxWidth: 'none',
+				maxHeight: 'none',
+				minWidth: '0',
+				minHeight: '0',
+				aspectRatio: 'auto',
+				borderRadius: '0'
+			});
+			isMaximized = true;
+		}
+		bringToTop(target);
+	};
+
 	$effect(() => {
 		untrack(() => {
 			initMoveable();
@@ -98,10 +130,35 @@
 	}}
 >
 	<button
+		type="button"
+		aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
+		title={isMaximized ? 'Restore' : 'Maximize'}
+		onclick={(e) => {
+			e.stopPropagation();
+			toggleMaximize();
+		}}
+		class="absolute right-11 top-1.5 z-20 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-neutral-300 bg-neutral-200 text-neutral-700 transition-colors hover:bg-neutral-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+	>
+		<svg
+			aria-hidden="true"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			class="h-4 w-4"
+			stroke-width="2"
+		>
+			{#if isMaximized}
+				<path d="M8 7V4h12v12h-3M4 8h12v12H4z" stroke-linejoin="round" />
+			{:else}
+				<rect x="4" y="4" width="16" height="16" rx="1" />
+			{/if}
+		</svg>
+	</button>
+	<button
 		onclick={(e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			moveable.destroy();
+			moveable?.destroy();
 			onClose();
 		}}
 		class="absolute right-2.5 top-1.5 bg-red-600 border border-red-600 text-white rounded-full flex items-center justify-center w-7 h-7 hover:bg-red-700 transition-all duration-200 active:scale-95 z-20 cursor-pointer"
@@ -109,7 +166,9 @@
 		<IconClose class="w-5 h-5" />
 	</button>
 	<div
-		class="w-full h-10 bg-neutral-100 flex items-center justify-between px-2.5 relative rounded-t-md cursor-grab border-b border-neutral-200 drag-target"
+		class="w-full h-10 bg-neutral-100 flex items-center justify-between px-2.5 pr-20 relative rounded-t-md border-b border-neutral-200 drag-target {isMaximized
+			? 'cursor-default'
+			: 'cursor-grab'}"
 	>
 		<h3 class="font-medium cursor-default text-neutral-800">{title}</h3>
 	</div>

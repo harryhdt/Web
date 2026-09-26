@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memory Card</title>
+  <link rel="stylesheet" href="/games/shared.css">
+  <style>
+    .board { width: min(100%, 450px, calc(100dvh - 165px)); min-width: min(100%, 230px); margin: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(5px, 1.5vw, 10px); }
+    .card { aspect-ratio: 1; min-width: 0; padding: 0; border: 2px solid #818cf8; border-radius: 12px; background: #3730a3; color: #fff; font-size: clamp(1.3rem, 6vw, 2.6rem); font-weight: 800; cursor: pointer; transition: background .2s, transform .2s; }
+    .card:hover:not([aria-disabled="true"]) { transform: translateY(-2px); background: #4f46e5; }
+    .card.revealed { background: #1e293b; border-color: #94a3b8; }
+    .card.matched { background: #064e3b; border-color: #34d399; cursor: default; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><h1>Memory Card</h1><p class="subtle">Turn over two cards at a time. Match all eight pairs using as few turns as possible.</p></header>
+    <div class="bar"><span class="stat">Turns: <strong id="turns">0</strong></span><span class="stat">Pairs: <strong id="pairs">0</strong> / 8</span><button id="restart" class="button secondary" type="button">New game</button></div>
+    <p id="status" class="status" role="status" aria-live="polite">Pick your first card.</p>
+    <div id="board" class="board" role="group" aria-label="Memory card board, four rows and four columns"></div>
+  </main>
+  <script>
+    const symbols = ['🌟', '🎈', '🍋', '🚀', '🐱', '🌙', '💎', '🎵'];
+    const board = document.getElementById('board');
+    const status = document.getElementById('status');
+    const turnsElement = document.getElementById('turns');
+    const pairsElement = document.getElementById('pairs');
+    const buttons = [];
+    let cards, first, locked, turns, pairs, hideTimer;
+
+    function shuffled(values) {
+      const result = values.slice();
+      for (let i = result.length - 1; i > 0; i--) {
+        const other = Math.floor(Math.random() * (i + 1));
+        [result[i], result[other]] = [result[other], result[i]];
+      }
+      return result;
+    }
+
+    function render() {
+      cards.forEach((card, index) => {
+        const button = buttons[index];
+        const visible = card.revealed || card.matched;
+        button.textContent = visible ? card.symbol : '?';
+        button.className = `card${visible ? ' revealed' : ''}${card.matched ? ' matched' : ''}`;
+        button.setAttribute('aria-label', `Row ${Math.floor(index / 4) + 1}, column ${index % 4 + 1}, ${visible ? card.symbol : 'face down'}${card.matched ? ', matched' : ''}`);
+        button.setAttribute('aria-disabled', String(card.matched || locked));
+        button.tabIndex = card.matched ? -1 : 0;
+      });
+      board.setAttribute('aria-busy', String(locked));
+      turnsElement.textContent = turns;
+      pairsElement.textContent = pairs;
+    }
+
+    function pick(index) {
+      if (locked || pairs === symbols.length) return;
+      if (cards[index].matched || cards[index].revealed) {
+        status.textContent = cards[index].matched ? 'That pair is already matched.' : 'That card is already face up.';
+        return;
+      }
+      cards[index].revealed = true;
+      if (first === null) {
+        first = index;
+        status.textContent = 'Pick a second card.';
+        render();
+        return;
+      }
+      turns++;
+      if (cards[first].symbol === cards[index].symbol) {
+        cards[first].matched = true;
+        cards[index].matched = true;
+        first = null;
+        pairs++;
+        status.textContent = pairs === symbols.length ? `All pairs matched in ${turns} turns — you win!` : 'Match found! Pick another card.';
+      } else {
+        locked = true;
+        const previous = first;
+        first = null;
+        status.textContent = 'Not a match. Try again.';
+        hideTimer = setTimeout(() => {
+          cards[previous].revealed = false;
+          cards[index].revealed = false;
+          locked = false;
+          hideTimer = null;
+          render();
+        }, 850);
+      }
+      render();
+    }
+
+    function newGame() {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+      cards = shuffled([...symbols, ...symbols]).map((symbol) => ({ symbol, revealed: false, matched: false }));
+      first = null;
+      locked = false;
+      turns = 0;
+      pairs = 0;
+      status.textContent = 'Pick your first card.';
+      render();
+    }
+
+    for (let index = 0; index < 16; index++) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'card';
+      button.addEventListener('click', () => pick(index));
+      buttons.push(button);
+      board.append(button);
+    }
+    document.getElementById('restart').addEventListener('click', newGame);
+    newGame();
+  </script>
+</body>
+</html>

@@ -65,15 +65,6 @@
 			contentClass: ''
 		},
 		{
-			name: 'Tools',
-			slug: 'tools',
-			icon: IconTools,
-			content: Tools,
-			tile: 'bg-neutral-800',
-			class: '',
-			contentClass: ''
-		},
-		{
 			name: 'Browser',
 			slug: 'browser',
 			icon: IconBrowser,
@@ -81,6 +72,15 @@
 			tile: 'bg-gradient-to-br from-violet-500 to-purple-700',
 			class: '',
 			contentClass: 'min-h-0'
+		},
+		{
+			name: 'Tools',
+			slug: 'tools',
+			icon: IconTools,
+			content: Tools,
+			tile: 'bg-gradient-to-br from-sky-500 to-cyan-600',
+			class: '',
+			contentClass: ''
 		},
 		{
 			name: 'Games',

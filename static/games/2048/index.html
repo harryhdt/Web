@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2048</title>
+  <link rel="stylesheet" href="/games/shared.css">
+  <style>
+    .grid { width: min(100%, 420px, calc(100dvh - 180px)); min-width: min(100%, 230px); margin: auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(4px, 1.5vw, 10px); padding: clamp(4px, 1.5vw, 10px); background: #334155; border-radius: 14px; touch-action: none; container-type: inline-size; }
+    .tile { aspect-ratio: 1; min-width: 0; overflow: hidden; display: grid; place-items: center; border-radius: 8px; background: #1e293b; font-size: clamp(.75rem, 4cqw, 1.5rem); font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums; }
+    .tile[data-value="2"] { background: #fef3c7; }
+    .tile[data-value="4"] { background: #fde68a; }
+    .tile[data-value="8"] { background: #fdba74; }
+    .tile[data-value="16"] { background: #fb923c; }
+    .tile[data-value="32"] { background: #f87171; }
+    .tile[data-value="64"] { background: #ef4444; color: white; }
+    .tile[data-value="128"], .tile[data-value="256"] { background: #facc15; }
+    .tile[data-value="512"], .tile[data-value="1024"] { background: #eab308; }
+    .tile[data-value="2048"], .tile[data-value="large"] { background: #a78bfa; color: #fff; font-size: clamp(.7rem, 3cqw, 1.1rem); }
+    .controls { display: grid; grid-template-columns: repeat(3, 44px); gap: 5px; justify-content: center; }
+    .controls button { padding: 8px; }
+    .controls [data-dir="up"] { grid-column: 2; }
+    .controls [data-dir="left"] { grid-column: 1; }
+    .controls [data-dir="down"] { grid-column: 2; }
+    .controls [data-dir="right"] { grid-column: 3; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><h1>2048</h1><p class="subtle">Combine matching tiles to reach 2048. Use arrow keys, WASD, swipe, or the buttons.</p></header>
+    <div class="bar"><span class="stat">Score: <strong id="score">0</strong></span><span class="stat">Best: <strong id="best">0</strong></span><button class="button secondary" id="restart" type="button">New game</button></div>
+    <p id="status" class="status" role="status" aria-live="polite">Slide the tiles to begin.</p>
+    <div id="board" class="grid" role="group" tabindex="0" aria-label="2048 tile board"></div>
+    <div class="controls" role="group" aria-label="Move tiles">
+      <button class="button secondary" type="button" data-dir="up" aria-label="Move up">↑</button>
+      <button class="button secondary" type="button" data-dir="left" aria-label="Move left">←</button>
+      <button class="button secondary" type="button" data-dir="down" aria-label="Move down">↓</button>
+      <button class="button secondary" type="button" data-dir="right" aria-label="Move right">→</button>
+    </div>
+  </main>
+  <script>
+    const boardElement = document.getElementById('board');
+    const scoreElement = document.getElementById('score');
+    const bestElement = document.getElementById('best');
+    const statusElement = document.getElementById('status');
+    let board = Array(16).fill(0);
+    let score = 0;
+    let best = 0;
+    let won = false;
+    let over = false;
+    let touchStart = null;
+
+    function indices(direction, line) {
+      if (direction === 'left') return [0, 1, 2, 3].map((column) => line * 4 + column);
+      if (direction === 'right') return [3, 2, 1, 0].map((column) => line * 4 + column);
+      if (direction === 'up') return [0, 1, 2, 3].map((row) => row * 4 + line);
+      return [3, 2, 1, 0].map((row) => row * 4 + line);
+    }
+
+    function spawnTile() {
+      const empty = board.flatMap((value, index) => value === 0 ? [index] : []);
+      if (empty.length === 0) return;
+      board[empty[Math.floor(Math.random() * empty.length)]] = Math.random() < .9 ? 2 : 4;
+    }
+
+    function canMove() {
+      if (board.includes(0)) return true;
+      return board.some((value, index) =>
+        (index % 4 < 3 && value === board[index + 1]) ||
+        (index < 12 && value === board[index + 4])
+      );
+    }
+
+    function render() {
+      boardElement.replaceChildren();
+      board.forEach((value, index) => {
+        const cell = document.createElement('div');
+        cell.className = 'tile';
+        cell.dataset.value = value > 2048 ? 'large' : String(value);
+        cell.textContent = value || '';
+        cell.setAttribute('role', 'img');
+        cell.setAttribute('aria-label', `Row ${Math.floor(index / 4) + 1}, column ${index % 4 + 1}, ${value || 'empty'}`);
+        boardElement.append(cell);
+      });
+      scoreElement.textContent = score;
+      bestElement.textContent = best;
+      if (won && over) statusElement.textContent = '2048 reached! No moves left — start a new game.';
+      else if (won) statusElement.textContent = '2048 reached! Keep going or start a new game.';
+      else if (over) statusElement.textContent = 'No moves left. Start a new game!';
+      else statusElement.textContent = 'Slide matching tiles together.';
+    }
+
+    function move(direction) {
+      if (over) return;
+      const next = board.slice();
+      let gained = 0;
+      for (let line = 0; line < 4; line++) {
+        const cells = indices(direction, line);
+        const values = cells.map((index) => board[index]).filter(Boolean);
+        const merged = [];
+        for (let index = 0; index < values.length; index++) {
+          if (values[index] === values[index + 1]) {
+            merged.push(values[index] * 2);
+            gained += values[index] * 2;
+            index++;
+          } else merged.push(values[index]);
+        }
+        cells.forEach((cell, index) => { next[cell] = merged[index] || 0; });
+      }
+      if (next.every((value, index) => value === board[index])) return;
+      board = next;
+      score += gained;
+      best = Math.max(score, best);
+      if (!won && board.some((value) => value >= 2048)) won = true;
+      spawnTile();
+      over = !canMove();
+      render();
+    }
+
+    function newGame() {
+      board = Array(16).fill(0);
+      score = 0;
+      won = false;
+      over = false;
+      spawnTile();
+      spawnTile();
+      render();
+    }
+
+    document.getElementById('restart').addEventListener('click', newGame);
+    document.querySelectorAll('[data-dir]').forEach((button) =>
+      button.addEventListener('click', () => move(button.dataset.dir))
+    );
+    document.addEventListener('keydown', (event) => {
+      const directions = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
+      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      const direction = directions[key];
+      if (!direction) return;
+      event.preventDefault();
+      move(direction);
+    });
+    boardElement.addEventListener('pointerdown', (event) => {
+      boardElement.setPointerCapture(event.pointerId);
+      touchStart = { x: event.clientX, y: event.clientY };
+    });
+    boardElement.addEventListener('pointerup', (event) => {
+      if (!touchStart) return;
+      const dx = event.clientX - touchStart.x;
+      const dy = event.clientY - touchStart.y;
+      touchStart = null;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 25) return;
+      move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+    });
+    boardElement.addEventListener('pointercancel', () => { touchStart = null; });
+    newGame();
+    boardElement.focus();
+  </script>
+</body>
+</html>

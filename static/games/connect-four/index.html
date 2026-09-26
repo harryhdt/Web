@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connect Four</title>
+  <link rel="stylesheet" href="/games/shared.css">
+  <style>
+    .game-area { width: min(100%, 490px, calc(100dvh - 175px)); min-width: min(100%, 245px); margin: auto; }
+    .columns, .board { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: clamp(3px, .8vw, 7px); }
+    .columns { margin-bottom: 7px; padding-inline: clamp(5px, 1.5vw, 12px); }
+    .columns button { min-width: 0; padding: 7px 0; }
+    .board { padding: clamp(5px, 1.5vw, 12px); border-radius: 14px; background: #1d4ed8; }
+    .slot { aspect-ratio: 1; border-radius: 50%; background: #0f172a; cursor: pointer; box-shadow: inset 0 2px 4px #020617aa; }
+    .board[data-locked="true"] .slot { cursor: default; }
+    .slot[data-full="true"] { cursor: not-allowed; }
+    .slot.red { background: #fb7185; }
+    .slot.yellow { background: #fde047; }
+    .slot.winning { outline: 3px solid white; outline-offset: -5px; }
+    .columns button[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+    .columns button[aria-disabled="true"]:hover { filter: none; }
+    .mode-choice[aria-pressed="true"] { background: #4f46e5; border-color: #c4b5fd; color: #fff; box-shadow: 0 0 0 2px #818cf866; }
+    .mode-choice[aria-pressed="false"] { opacity: .8; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><h1>Connect Four</h1><p class="subtle">Play with a friend or against a casual AI. Connect four horizontally, vertically, or diagonally to win.</p></header>
+    <div class="bar" role="group" aria-label="Game mode"><button class="button secondary mode-choice" type="button" data-mode="local" aria-pressed="true">Two players</button><button class="button secondary mode-choice" type="button" data-mode="ai" aria-pressed="false">Vs AI</button></div>
+    <div class="bar"><span class="stat">Turn: <strong id="turn">Red</strong></span><button id="restart" class="button secondary" type="button">New game</button></div>
+    <p id="status" class="status" role="status" aria-live="polite">Red goes first. Choose a column.</p>
+    <div class="game-area">
+      <div id="columns" class="columns" role="group" aria-label="Drop a disc into a column"></div>
+      <div id="board" class="board" role="group" aria-label="Connect Four board, six rows and seven columns"></div>
+    </div>
+  </main>
+  <script>
+    const rows = 6;
+    const columns = 7;
+    const boardElement = document.getElementById('board');
+    const columnElement = document.getElementById('columns');
+    const status = document.getElementById('status');
+    const turnElement = document.getElementById('turn');
+    const slots = [];
+    const columnButtons = [];
+    const modeButtons = document.querySelectorAll('[data-mode]');
+    const preferredColumns = [3, 2, 4, 1, 5, 0, 6];
+    const casualMoveChance = 0.4;
+    let board, current, ended, winningCells, aiTimer = null, mode = 'local';
+
+    function inBounds(row, column) {
+      return row >= 0 && row < rows && column >= 0 && column < columns;
+    }
+
+    function winningLine(row, column, state = board, player = current) {
+      const winning = new Set();
+      for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
+        const cells = [row * columns + column];
+        for (const sign of [-1, 1]) {
+          let r = row + dr * sign;
+          let c = column + dc * sign;
+          while (inBounds(r, c) && state[r * columns + c] === player) {
+            cells.push(r * columns + c);
+            r += dr * sign;
+            c += dc * sign;
+          }
+        }
+        if (cells.length >= 4) cells.forEach((index) => winning.add(index));
+      }
+      return [...winning];
+    }
+
+    function evaluate(state) {
+      let score = 0;
+      for (let row = 0; row < rows; row++) {
+        if (state[row * columns + 3] === 'yellow') score += 3;
+      }
+      for (let row = 0; row < rows; row++) {
+        for (let column = 0; column < columns; column++) {
+          for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
+            if (!inBounds(row + dr * 3, column + dc * 3)) continue;
+            let yellow = 0;
+            let red = 0;
+            for (let offset = 0; offset < 4; offset++) {
+              const value = state[(row + dr * offset) * columns + column + dc * offset];
+              if (value === 'yellow') yellow++;
+              if (value === 'red') red++;
+            }
+            if (!red) score += [0, 1, 8, 45, 10000][yellow];
+            if (!yellow) score -= [0, 1, 10, 75, 10000][red];
+          }
+        }
+      }
+      return score;
+    }
+
+    function minimax(state, depth, player, alpha, beta, lastMove) {
+      if (lastMove && winningLine(lastMove.row, lastMove.column, state, lastMove.player).length) {
+        return lastMove.player === 'yellow' ? 100000 + depth : -100000 - depth;
+      }
+      if (depth === 0 || state.every(Boolean)) return evaluate(state);
+      const maximizing = player === 'yellow';
+      let best = maximizing ? -Infinity : Infinity;
+      for (const column of preferredColumns) {
+        if (state[column] !== null) continue;
+        let row = rows - 1;
+        while (state[row * columns + column] !== null) row--;
+        const next = state.slice();
+        next[row * columns + column] = player;
+        const score = minimax(next, depth - 1, maximizing ? 'red' : 'yellow', alpha, beta, { row, column, player });
+        best = maximizing ? Math.max(best, score) : Math.min(best, score);
+        if (maximizing) alpha = Math.max(alpha, best);
+        else beta = Math.min(beta, best);
+        if (beta <= alpha) break;
+      }
+      return best;
+    }
+
+    function chooseAiColumn() {
+      const available = preferredColumns.filter((column) => board[column] === null);
+      for (const column of available) {
+        let row = rows - 1;
+        while (board[row * columns + column] !== null) row--;
+        const next = board.slice();
+        next[row * columns + column] = 'yellow';
+        if (winningLine(row, column, next, 'yellow').length) return column;
+      }
+      // Casual play: sometimes miss a block or overlook a stronger setup.
+      if (Math.random() < casualMoveChance) return available[Math.floor(Math.random() * available.length)];
+      let bestColumn = -1;
+      let bestScore = -Infinity;
+      for (const column of preferredColumns) {
+        if (board[column] !== null) continue;
+        let row = rows - 1;
+        while (board[row * columns + column] !== null) row--;
+        const next = board.slice();
+        next[row * columns + column] = 'yellow';
+        const score = minimax(next, 3, 'red', -Infinity, Infinity, { row, column, player: 'yellow' });
+        if (score > bestScore) { bestScore = score; bestColumn = column; }
+      }
+      return bestColumn;
+    }
+
+    function render() {
+      board.forEach((value, index) => {
+        const slot = slots[index];
+        slot.className = `slot${value ? ` ${value}` : ''}${winningCells.includes(index) ? ' winning' : ''}`;
+        slot.dataset.full = String(board[index % columns] !== null);
+        slot.setAttribute('aria-label', `Row ${Math.floor(index / columns) + 1}, column ${index % columns + 1}, ${value || 'empty'}${winningCells.includes(index) ? ', winning line' : ''}`);
+      });
+      columnButtons.forEach((button, column) => {
+        const full = board[column] !== null;
+        button.setAttribute('aria-disabled', String(full || ended || (mode === 'ai' && current === 'yellow')));
+        button.setAttribute('aria-label', `Drop in column ${column + 1}${full ? ', full' : ''}`);
+      });
+      modeButtons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.mode === mode)));
+      boardElement.dataset.locked = String(ended || (mode === 'ai' && current === 'yellow'));
+      turnElement.textContent = ended ? '—' : current === 'red' ? 'Red' : mode === 'ai' ? 'Yellow (AI)' : 'Yellow';
+    }
+
+    function drop(column, source = 'human') {
+      if (ended || !Number.isInteger(column) || column < 0 || column >= columns) return;
+      if (mode === 'ai' && ((source === 'human' && current !== 'red') || (source === 'ai' && current !== 'yellow'))) return;
+      let row = rows - 1;
+      while (row >= 0 && board[row * columns + column] !== null) row--;
+      if (row < 0) { status.textContent = 'That column is full. Choose another.'; return; }
+      board[row * columns + column] = current;
+      winningCells = winningLine(row, column);
+      if (winningCells.length) {
+        ended = true;
+        status.textContent = `${current === 'red' ? 'Red' : 'Yellow'} wins! Start a new game to play again.`;
+      } else if (board.every(Boolean)) {
+        ended = true;
+        status.textContent = 'The board is full — it is a draw.';
+      } else {
+        current = current === 'red' ? 'yellow' : 'red';
+        status.textContent = mode === 'ai' && current === 'yellow' ? 'AI is thinking…' : `${current === 'red' ? 'Red' : 'Yellow'} to move.`;
+      }
+      render();
+      if (mode === 'ai' && !ended && current === 'yellow') {
+        aiTimer = setTimeout(() => {
+          aiTimer = null;
+          if (!ended && mode === 'ai' && current === 'yellow') drop(chooseAiColumn(), 'ai');
+        }, 350);
+      }
+    }
+
+    function newGame() {
+      clearTimeout(aiTimer);
+      aiTimer = null;
+      board = Array(rows * columns).fill(null);
+      current = 'red';
+      ended = false;
+      winningCells = [];
+      status.textContent = 'Red goes first. Choose a column.';
+      render();
+      columnButtons[0].focus();
+    }
+
+    for (let column = 0; column < columns; column++) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'button secondary';
+      button.textContent = '↓';
+      button.addEventListener('click', () => drop(column));
+      columnButtons.push(button);
+      columnElement.append(button);
+    }
+    for (let index = 0; index < rows * columns; index++) {
+      const slot = document.createElement('div');
+      slot.dataset.column = index % columns;
+      slot.setAttribute('role', 'img');
+      slots.push(slot);
+      boardElement.append(slot);
+    }
+    boardElement.addEventListener('click', (event) => {
+      const column = event.target.dataset.column;
+      if (column !== undefined) drop(Number(column));
+    });
+    modeButtons.forEach((button) => button.addEventListener('click', () => {
+      if (mode === button.dataset.mode) return;
+      mode = button.dataset.mode;
+      newGame();
+    }));
+    columnElement.addEventListener('keydown', (event) => {
+      const index = columnButtons.indexOf(document.activeElement);
+      if (index < 0) return;
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      columnButtons[Math.max(0, Math.min(columns - 1, index + (event.key === 'ArrowRight' ? 1 : -1)))].focus();
+    });
+    document.getElementById('restart').addEventListener('click', newGame);
+    newGame();
+  </script>
+</body>
+</html>

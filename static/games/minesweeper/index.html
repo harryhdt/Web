@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minesweeper</title>
+  <link rel="stylesheet" href="/games/shared.css">
+  <style>
+    .board { width: min(100%, 450px, calc(100dvh - 175px)); min-width: min(100%, 240px); margin: auto; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 3px; }
+    .cell { aspect-ratio: 1; min-width: 0; padding: 0; border: 1px solid #64748b; border-radius: 5px; background: #334155; color: #fff; font-size: clamp(.75rem, 3vw, 1.3rem); font-weight: 800; cursor: pointer; }
+    .cell:hover:not([aria-disabled="true"]) { background: #475569; }
+    .cell.revealed { background: #1e293b; border-color: #334155; cursor: default; }
+    .cell.flagged { color: #fbbf24; }
+    .cell.mine { background: #7f1d1d; }
+    .cell[data-count="1"] { color: #93c5fd; }
+    .cell[data-count="2"] { color: #86efac; }
+    .cell[data-count="3"] { color: #fca5a5; }
+    .cell[data-count="4"] { color: #c4b5fd; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><h1>Minesweeper</h1><p class="subtle">Reveal every safe square. Right-click or press F to flag; use arrow keys to move between cells. On touchscreens, switch to Flag mode.</p></header>
+    <div class="bar"><span class="stat">Flags: <strong id="flags">0</strong> / <strong id="mine-total">10</strong></span><button id="mode" class="button secondary" type="button" aria-pressed="false">Flag mode: Off</button><button id="restart" class="button secondary" type="button">New game</button></div>
+    <p id="status" class="status" role="status" aria-live="polite">Your first reveal is safe.</p>
+    <div id="board" class="board" role="group" aria-label="Minesweeper board, nine rows and nine columns"></div>
+  </main>
+  <script>
+    const width = 9;
+    const mineCount = 10;
+    const board = document.getElementById('board');
+    const status = document.getElementById('status');
+    const flagsElement = document.getElementById('flags');
+    document.getElementById('mine-total').textContent = mineCount;
+    const modeButton = document.getElementById('mode');
+    const buttons = [];
+    let cells, firstMove, ended, flagMode, flags, revealedCount;
+
+    function neighbors(index) {
+      const row = Math.floor(index / width);
+      const column = index % width;
+      const result = [];
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const r = row + dr;
+          const c = column + dc;
+          if ((dr || dc) && r >= 0 && r < width && c >= 0 && c < width) result.push(r * width + c);
+        }
+      }
+      return result;
+    }
+
+    function plantMines(firstIndex) {
+      const safe = new Set([firstIndex, ...neighbors(firstIndex)]);
+      const candidates = cells.map((_, index) => index).filter((index) => !safe.has(index));
+      for (let i = candidates.length - 1; i > 0; i--) {
+        const other = Math.floor(Math.random() * (i + 1));
+        [candidates[i], candidates[other]] = [candidates[other], candidates[i]];
+      }
+      for (const index of candidates.slice(0, mineCount)) cells[index].mine = true;
+      cells.forEach((cell, index) => { cell.count = neighbors(index).filter((near) => cells[near].mine).length; });
+      firstMove = false;
+    }
+
+    function render() {
+      cells.forEach((cell, index) => {
+        const button = buttons[index];
+        const showMine = ended && cell.mine && !cell.flagged;
+        button.textContent = cell.flagged ? '⚑' : showMine ? '✹' : cell.revealed && cell.count ? cell.count : '';
+        button.className = `cell${cell.revealed ? ' revealed' : ''}${cell.flagged ? ' flagged' : ''}${showMine ? ' mine' : ''}`;
+        button.dataset.count = cell.revealed ? cell.count : '';
+        button.setAttribute('aria-disabled', String(ended || cell.revealed));
+        button.setAttribute('aria-label', `Row ${Math.floor(index / width) + 1}, column ${index % width + 1}, ${cell.flagged ? 'flagged' : showMine ? 'mine' : cell.revealed ? (cell.count || 'empty') : 'hidden'}`);
+      });
+      flagsElement.textContent = flags;
+      modeButton.textContent = `Flag mode: ${flagMode ? 'On' : 'Off'}`;
+      modeButton.setAttribute('aria-pressed', String(flagMode));
+    }
+
+    function flag(index) {
+      const cell = cells[index];
+      if (ended || cell.revealed || (!cell.flagged && flags >= mineCount)) return;
+      cell.flagged = !cell.flagged;
+      flags += cell.flagged ? 1 : -1;
+      status.textContent = cell.flagged ? 'Flag placed.' : 'Flag removed.';
+      render();
+    }
+
+    function reveal(index) {
+      if (ended || cells[index].flagged || cells[index].revealed) return;
+      if (firstMove) plantMines(index);
+      if (cells[index].mine) {
+        ended = true;
+        status.textContent = 'Boom! You hit a mine. Start a new game.';
+        render();
+        return;
+      }
+      const queue = [index];
+      while (queue.length) {
+        const current = queue.pop();
+        const cell = cells[current];
+        if (cell.revealed || cell.flagged || cell.mine) continue;
+        cell.revealed = true;
+        revealedCount++;
+        if (cell.count === 0) queue.push(...neighbors(current));
+      }
+      if (revealedCount === width * width - mineCount) {
+        ended = true;
+        status.textContent = 'All safe squares revealed — you win!';
+      } else status.textContent = `${width * width - mineCount - revealedCount} safe squares remaining.`;
+      render();
+    }
+
+    function newGame() {
+      cells = Array.from({ length: width * width }, () => ({ mine: false, count: 0, flagged: false, revealed: false }));
+      firstMove = true;
+      ended = false;
+      flagMode = false;
+      flags = 0;
+      revealedCount = 0;
+      buttons.forEach((button, index) => { button.tabIndex = index === 0 ? 0 : -1; });
+      status.textContent = 'Your first reveal is safe.';
+      render();
+      buttons[0].focus();
+    }
+
+    for (let index = 0; index < width * width; index++) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.tabIndex = index === 0 ? 0 : -1;
+      button.addEventListener('focus', () => {
+        buttons.forEach((item) => { item.tabIndex = -1; });
+        button.tabIndex = 0;
+      });
+      button.addEventListener('click', () => flagMode ? flag(index) : reveal(index));
+      button.addEventListener('contextmenu', (event) => { event.preventDefault(); flag(index); });
+      buttons.push(button);
+      board.append(button);
+    }
+    board.addEventListener('keydown', (event) => {
+      const index = buttons.indexOf(document.activeElement);
+      if (index < 0) return;
+      if (event.key.toLowerCase() === 'f') {
+        event.preventDefault();
+        flag(index);
+        return;
+      }
+      const row = Math.floor(index / width);
+      const column = index % width;
+      const directions = {
+        ArrowUp: [Math.max(0, row - 1), column],
+        ArrowDown: [Math.min(width - 1, row + 1), column],
+        ArrowLeft: [row, Math.max(0, column - 1)],
+        ArrowRight: [row, Math.min(width - 1, column + 1)]
+      };
+      if (!directions[event.key]) return;
+      event.preventDefault();
+      const [nextRow, nextColumn] = directions[event.key];
+      buttons[nextRow * width + nextColumn].focus();
+    });
+    modeButton.addEventListener('click', () => { flagMode = !flagMode; render(); });
+    document.getElementById('restart').addEventListener('click', newGame);
+    newGame();
+  </script>
+</body>
+</html>

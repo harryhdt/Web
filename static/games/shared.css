@@ -1,0 +1,19 @@
+:root { color-scheme: dark; font-family: system-ui, -apple-system, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #020617; color: #e2e8f0; }
+.shell { width: min(100%, 680px); min-height: 100dvh; margin: auto; padding: clamp(12px, 3vw, 24px); display: flex; flex-direction: column; gap: 14px; justify-content: center; }
+h1, h2, p { margin: 0; }
+h1 { font-size: clamp(1.4rem, 4vw, 2rem); }
+.subtle { color: #94a3b8; font-size: .9rem; line-height: 1.5; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.bar > * { min-width: 0; }
+.panel { border: 1px solid #334155; border-radius: 16px; background: #0f172a; padding: clamp(12px, 3vw, 20px); }
+.status { min-height: 1.5em; color: #c4b5fd; font-weight: 700; }
+.button { border: 1px solid #6366f1; border-radius: 9px; background: #4f46e5; padding: 9px 14px; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.button.secondary { background: #1e293b; border-color: #475569; }
+.button:hover:not(:disabled) { filter: brightness(1.2); }
+.button:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+select, input { color: #f8fafc; background: #1e293b; border: 1px solid #64748b; border-radius: 8px; padding: 8px; font: inherit; }
+.stat { background: #1e293b; border-radius: 9px; padding: 8px 12px; font-variant-numeric: tabular-nums; }
+@media (max-height: 440px) { .shell { justify-content: flex-start; } }

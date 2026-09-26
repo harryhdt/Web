@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sudoku</title>
+  <link rel="stylesheet" href="/games/shared.css">
+  <style>
+    .board { width: min(100%, 450px, calc(100dvh - 210px)); min-width: min(100%, 245px); margin: auto; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); border: 3px solid #94a3b8; background: #334155; }
+    .cell { aspect-ratio: 1; min-width: 0; padding: 0; border: 1px solid #475569; background: #0f172a; color: #a5b4fc; font-size: clamp(.9rem, 3vw, 1.5rem); font-weight: 700; cursor: pointer; }
+    .cell[data-col="3"], .cell[data-col="6"] { border-left: 3px solid #94a3b8; }
+    .cell[data-row="3"], .cell[data-row="6"] { border-top: 3px solid #94a3b8; }
+    .cell.given { background: #1e293b; color: #f8fafc; }
+    .cell.hint { color: #6ee7b7; }
+    .cell.selected { background: #3730a3; color: #fff; }
+    .cell.wrong { background: #7f1d1d; color: #fff; }
+    .digits { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+    .digits button { padding: 8px 0; }
+    @media (min-width: 480px) { .digits { grid-template-columns: repeat(10, 1fr); } }
+    @media (max-height: 460px) { .shell { justify-content: flex-start; } header .subtle { display: none; } .board { min-width: min(100%, 185px); } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><h1>Sudoku</h1><p class="subtle">Fill every row, column, and 3×3 box with 1–9. Select a square and use the number pad or keyboard.</p></header>
+    <div class="bar"><button id="restart" class="button secondary" type="button">New puzzle</button><button id="check" class="button secondary" type="button">Check</button><button id="hint" class="button secondary" type="button">Hint</button></div>
+    <p id="status" class="status" role="status" aria-live="polite">Choose an empty square.</p>
+    <div id="board" class="board" role="group" aria-label="Sudoku board, nine rows and nine columns"></div>
+    <div id="digits" class="digits" role="group" aria-label="Enter a digit"></div>
+  </main>
+  <script>
+    const basePuzzle = '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
+    const baseSolution = '534678912672195348198342567859761423426853791713924856961537284287419635345286179';
+    const board = document.getElementById('board');
+    const digitPad = document.getElementById('digits');
+    const status = document.getElementById('status');
+    const buttons = [];
+    let puzzle, solution, entries, hinted, selected, checked, finished;
+
+    function shuffle(values) {
+      const result = values.slice();
+      for (let i = result.length - 1; i > 0; i--) {
+        const other = Math.floor(Math.random() * (i + 1));
+        [result[i], result[other]] = [result[other], result[i]];
+      }
+      return result;
+    }
+
+    function orderedGroups() {
+      return shuffle([0, 1, 2]).flatMap((group) => shuffle([0, 1, 2]).map((within) => group * 3 + within));
+    }
+
+    function render() {
+      buttons.forEach((button, index) => {
+        const value = entries[index];
+        const wrong = checked && value && value !== solution[index];
+        button.textContent = value || '';
+        button.className = `cell${puzzle[index] ? ' given' : ''}${hinted.has(index) ? ' hint' : ''}${selected === index ? ' selected' : ''}${wrong ? ' wrong' : ''}`;
+        button.setAttribute('aria-label', `Row ${Math.floor(index / 9) + 1}, column ${index % 9 + 1}, ${value || 'empty'}${puzzle[index] ? ', given' : hinted.has(index) ? ', hint' : ''}${wrong ? ', incorrect' : ''}`);
+        button.tabIndex = selected === index ? 0 : -1;
+      });
+    }
+
+    function checkComplete() {
+      if (entries.every((value, index) => value === solution[index])) {
+        finished = true;
+        status.textContent = 'Puzzle solved — great job!';
+      }
+    }
+
+    function enter(value) {
+      if (finished || selected === null) return;
+      if (puzzle[selected] || hinted.has(selected)) {
+        status.textContent = 'Given clues and hints cannot be changed.';
+        return;
+      }
+      entries[selected] = value;
+      checked = false;
+      status.textContent = value ? 'Number entered.' : 'Square cleared.';
+      checkComplete();
+      render();
+    }
+
+    function check() {
+      if (finished) return;
+      checked = true;
+      const wrong = entries.filter((value, index) => value && value !== solution[index]).length;
+      const empty = entries.filter((value) => !value).length;
+      status.textContent = wrong ? `${wrong} incorrect squares highlighted.` : empty ? `${empty} squares remaining — so far, so good!` : 'Puzzle solved — great job!';
+      if (!wrong && !empty) finished = true;
+      render();
+      buttons[selected].focus();
+    }
+
+    function hint() {
+      if (finished) return;
+      const index = selected !== null && !puzzle[selected] && !hinted.has(selected) && entries[selected] !== solution[selected]
+        ? selected
+        : entries.findIndex((value, cell) => value !== solution[cell] && !puzzle[cell] && !hinted.has(cell));
+      if (index < 0) return;
+      entries[index] = solution[index];
+      hinted.add(index);
+      selected = index;
+      checked = false;
+      status.textContent = `Hint revealed at row ${Math.floor(index / 9) + 1}, column ${index % 9 + 1}.`;
+      checkComplete();
+      render();
+      buttons[index].focus();
+    }
+
+    function newGame() {
+      const rows = orderedGroups();
+      const columns = orderedGroups();
+      const digits = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      const transpose = Math.random() < .5;
+      const source = (row, column) => transpose
+        ? rows[column] * 9 + columns[row]
+        : rows[row] * 9 + columns[column];
+      solution = [];
+      puzzle = [];
+      for (let index = 0; index < 81; index++) {
+        const position = source(Math.floor(index / 9), index % 9);
+        solution.push(digits[Number(baseSolution[position]) - 1]);
+        puzzle.push(basePuzzle[position] === '0' ? 0 : digits[Number(basePuzzle[position]) - 1]);
+      }
+      entries = puzzle.slice();
+      hinted = new Set();
+      selected = 0;
+      checked = false;
+      finished = false;
+      status.textContent = 'Choose an empty square.';
+      render();
+      buttons[0].focus();
+    }
+
+    for (let index = 0; index < 81; index++) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'cell';
+      button.dataset.row = Math.floor(index / 9);
+      button.dataset.col = index % 9;
+      button.addEventListener('focus', () => { selected = index; render(); });
+      button.addEventListener('click', () => { selected = index; render(); });
+      buttons.push(button);
+      board.append(button);
+    }
+    for (let digit = 1; digit <= 9; digit++) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'button secondary';
+      button.textContent = digit;
+      button.addEventListener('click', () => { enter(digit); buttons[selected].focus(); });
+      digitPad.append(button);
+    }
+    const erase = document.createElement('button');
+    erase.type = 'button';
+    erase.className = 'button secondary';
+    erase.textContent = 'Erase';
+    erase.addEventListener('click', () => { enter(0); buttons[selected].focus(); });
+    digitPad.append(erase);
+    board.addEventListener('keydown', (event) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (/^[1-9]$/.test(event.key)) { event.preventDefault(); enter(Number(event.key)); return; }
+      if (event.key === 'Backspace' || event.key === 'Delete' || event.key === '0') { event.preventDefault(); enter(0); return; }
+      const row = Math.floor(selected / 9);
+      const column = selected % 9;
+      const next = {
+        ArrowUp: [Math.max(0, row - 1), column],
+        ArrowDown: [Math.min(8, row + 1), column],
+        ArrowLeft: [row, Math.max(0, column - 1)],
+        ArrowRight: [row, Math.min(8, column + 1)]
+      }[event.key];
+      if (!next) return;
+      event.preventDefault();
+      buttons[next[0] * 9 + next[1]].focus();
+    });
+    document.getElementById('restart').addEventListener('click', newGame);
+    document.getElementById('check').addEventListener('click', check);
+    document.getElementById('hint').addEventListener('click', hint);
+    newGame();
+  </script>
+</body>
+</html>
