@@ -150,6 +150,7 @@
 				<button
 					type="button"
 					onclick={() => (selectedTool = tool)}
+					data-umami-event="Tools > {tool.name}"
 					class="flex cursor-pointer flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-4 text-left shadow-sm transition-colors hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
 				>
 					<span class="text-2xl font-bold {tool.iconClass}" aria-hidden="true">{tool.icon}</span>

@@ -117,6 +117,7 @@
 						type="button"
 						data-game={game.slug}
 						onclick={() => (selectedGame = game)}
+						data-umami-event="Games > {game.name}"
 						class="group flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-3 text-left shadow-sm transition-colors hover:border-violet-400 hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
 					>
 						<span
