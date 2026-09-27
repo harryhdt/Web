@@ -88,7 +88,8 @@
 			icon: IconGames,
 			content: Games,
 			tile: 'bg-gradient-to-br from-fuchsia-500 to-violet-700',
-			class: '',
+			class:
+				'max-md:fixed max-md:h-[calc(100dvh-56px)] max-md:max-h-none max-md:min-h-0 max-md:aspect-auto',
 			contentClass: 'min-h-0'
 		}
 	];
@@ -151,7 +152,7 @@
 	class="relative h-[100dvh] overflow-x-hidden select-none text-neutral-600 font-app text-[15px]"
 	oncontextmenu={onContextMenu}
 >
-	<div data-taskbar class="h-7 bg-black/20 sticky top-0 flex items-center px-2.5 w-full">
+	<div data-taskbar class="h-7 bg-black/20 sticky top-0 z-10 flex items-center px-2.5 w-full">
 		<div class="hidden mr-auto sm:block">
 			<span class="text-sm font-semibold text-white">harryhdt.dev</span>
 		</div>

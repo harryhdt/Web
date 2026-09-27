@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sliding Puzzle</title>
+  <link rel="stylesheet" href="/games/shared.css">
+  <style>
+    .shell { justify-content: flex-start; }
+    .board { width: min(100%, 420px, calc(100dvh - 175px)); min-width: min(100%, 230px); margin: auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(4px, 1.5vw, 9px); padding: clamp(4px, 1.5vw, 9px); border-radius: 14px; background: #334155; }
+    .tile { aspect-ratio: 1; min-width: 0; padding: 0; border: 0; border-radius: 8px; background: #6366f1; color: white; font-size: clamp(1.1rem, 5vw, 2rem); font-weight: 800; font-variant-numeric: tabular-nums; cursor: pointer; }
+    .tile:hover:not(:disabled) { background: #818cf8; }
+    .tile:disabled { cursor: default; }
+    .tile.empty { background: #1e293b; }
+    .tile.correct:not(.empty) { background: #0f766e; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><h1>Sliding Puzzle</h1><p class="subtle">Arrange 1–15 in order. Click a tile next to the empty square, or use arrow keys / WASD to move the empty square.</p></header>
+    <div class="bar"><span class="stat">Moves: <strong id="moves">0</strong></span><button class="button secondary" id="restart" type="button">New game</button></div>
+    <p id="status" class="status" role="status" aria-live="polite">Slide a tile to begin.</p>
+    <div id="board" class="board" role="group" aria-label="Sliding puzzle, four rows and four columns"></div>
+  </main>
+  <script>
+    const size = 4;
+    const boardElement = document.getElementById('board');
+    const movesElement = document.getElementById('moves');
+    const statusElement = document.getElementById('status');
+    const instructions = document.querySelector('header');
+    const tiles = [];
+    let board, empty, moves, won;
+
+    function neighbors(index) {
+      const row = Math.floor(index / size);
+      const column = index % size;
+      return [
+        ...(row > 0 ? [index - size] : []),
+        ...(row < size - 1 ? [index + size] : []),
+        ...(column > 0 ? [index - 1] : []),
+        ...(column < size - 1 ? [index + 1] : [])
+      ];
+    }
+
+    function solved() {
+      return board.every((value, index) => value === (index + 1) % (size * size));
+    }
+
+    function render() {
+      instructions.hidden = moves > 0;
+      board.forEach((value, index) => {
+        const tile = tiles[index];
+        tile.textContent = value || '';
+        tile.className = `tile${value === 0 ? ' empty' : ''}${value === index + 1 ? ' correct' : ''}`;
+        tile.disabled = won || value === 0 || !neighbors(empty).includes(index);
+        tile.setAttribute('aria-label', `Row ${Math.floor(index / size) + 1}, column ${index % size + 1}, ${value || 'empty'}`);
+      });
+      movesElement.textContent = moves;
+    }
+
+    function move(index) {
+      if (won || !neighbors(empty).includes(index)) return;
+      const oldEmpty = empty;
+      [board[empty], board[index]] = [board[index], board[empty]];
+      empty = index;
+      moves++;
+      won = solved();
+      statusElement.textContent = won ? `Solved in ${moves} moves!` : 'Keep sliding the tiles into order.';
+      render();
+      if (won) document.getElementById('restart').focus({ preventScroll: true });
+      else tiles[oldEmpty].focus({ preventScroll: true });
+    }
+
+    function newGame() {
+      board = Array.from({ length: size * size }, (_, index) => (index + 1) % (size * size));
+      empty = size * size - 1;
+      let previous = -1;
+      // Legal moves from the solved board guarantee a solvable puzzle.
+      for (let step = 0; step < 200; step++) {
+        const choices = neighbors(empty).filter((index) => index !== previous);
+        const next = choices[Math.floor(Math.random() * choices.length)];
+        board[empty] = board[next];
+        board[next] = 0;
+        previous = empty;
+        empty = next;
+      }
+      if (solved()) {
+        const next = neighbors(empty)[0];
+        board[empty] = board[next];
+        board[next] = 0;
+        empty = next;
+      }
+      moves = 0;
+      won = false;
+      statusElement.textContent = 'Slide a tile to begin.';
+      render();
+      tiles[neighbors(empty)[0]].focus({ preventScroll: true });
+    }
+
+    for (let index = 0; index < size * size; index++) {
+      const tile = document.createElement('button');
+      tile.type = 'button';
+      tile.addEventListener('click', () => move(index));
+      tiles.push(tile);
+      boardElement.append(tile);
+    }
+    boardElement.addEventListener('keydown', (event) => {
+      const keys = { ArrowUp: -size, ArrowDown: size, ArrowLeft: -1, ArrowRight: 1, w: -size, s: size, a: -1, d: 1 };
+      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      if (!(key in keys)) return;
+      event.preventDefault();
+      const target = empty + keys[key];
+      if (!neighbors(empty).includes(target)) return;
+      move(target);
+    });
+    document.getElementById('restart').addEventListener('click', newGame);
+    newGame();
+  </script>
+</body>
+</html>

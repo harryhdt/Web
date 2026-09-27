@@ -50,6 +50,41 @@
 			description: 'Two players or play vs AI',
 			icon: '●○',
 			color: 'bg-cyan-700'
+		},
+		{
+			slug: 'sliding-puzzle',
+			name: 'Sliding Puzzle',
+			description: 'Slide numbered tiles into order',
+			icon: '▦',
+			color: 'bg-orange-600'
+		},
+		{
+			slug: 'flappy-bird',
+			name: 'Flappy Bird',
+			description: 'Fly between the pipes',
+			icon: '🐤',
+			color: 'bg-sky-600'
+		},
+		{
+			slug: 'pixel-trail',
+			name: 'Pixel Trail',
+			description: 'Jump, collect stars, reach the flag',
+			icon: '★',
+			color: 'bg-emerald-700'
+		},
+		{
+			slug: 'mortar-watch',
+			name: 'Mortar Watch',
+			description: 'Defend against zombies and choose upgrades',
+			icon: '◎',
+			color: 'bg-rose-700'
+		},
+		{
+			slug: 'roadbreak',
+			name: 'Roadbreak',
+			description: 'Drive, shoot zombies, and collect road upgrades',
+			icon: '🚗',
+			color: 'bg-red-600'
 		}
 	] as const;
 	let selectedGame = $state<(typeof games)[number] | null>(null);

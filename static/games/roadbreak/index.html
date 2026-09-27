@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roadbreak</title>
+  <link rel="stylesheet" href="/games/shared.css">
+  <style>
+    .shell { justify-content: flex-start; gap: 8px; padding: 10px; }
+    .road { display: block; width: min(100%, 420px, calc((100dvh - 185px) * .875)); min-width: min(100%, 190px); height: auto; margin: 0 auto; border: 3px solid #475569; border-radius: 12px; background: #1e293b; touch-action: none; }
+    .road:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+    .controls { position: sticky; bottom: 0; z-index: 1; display: flex; justify-content: center; gap: 20px; padding: 4px 0; background: #020617; }
+    .controls button { width: min(38%, 150px); min-height: 52px; font-size: 1.3rem; touch-action: manipulation; }
+    .bar { gap: 4px; }
+    .bar .stat { padding: 6px 7px; font-size: .85rem; }
+    .bar .button { padding: 6px 8px; font-size: .82rem; }
+    @media (max-height: 440px) {
+      .road { width: min(100%, 175px); min-width: 0; }
+      .bar { gap: 4px; }
+      .bar .stat { padding: 5px 6px; font-size: .75rem; }
+      .bar .button { padding: 5px 8px; font-size: .75rem; }
+      .status { font-size: .82rem; line-height: 1.25; }
+    }
+    @media (max-height: 340px) and (min-width: 500px) {
+      .shell { width: 100%; max-width: none; min-height: 100dvh; display: grid; grid-template-columns: 1.2fr 1fr; grid-template-rows: auto auto auto auto; align-content: center; gap: 4px 8px; }
+      header:not([hidden]) { grid-column: 1 / -1; }
+      .bar { grid-column: 1; grid-row: 2; }
+      .status { grid-column: 1; grid-row: 3; }
+      .road { grid-column: 2; grid-row: 2 / 5; width: min(100%, calc((100dvh - 20px) * .875)); min-width: 0; }
+      .controls { grid-column: 1; grid-row: 4; position: static; gap: 8px; }
+      .controls button { min-height: 44px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><h1>Roadbreak</h1><p class="subtle">Drive 1,500 m through zombie country. The car moves and fires automatically. Switch lanes to shoot, ram zombies, and collect road upgrades. Use ← →, the buttons, or swipe.</p></header>
+    <div class="bar"><span class="stat">Road <strong id="distance">0</strong>/1500 m</span><span class="stat">Health <strong id="health">♥ ♥ ♥ ♥</strong></span><span class="stat">Kills <strong id="kills">0</strong></span><span class="stat">Armor <strong id="armor">0</strong></span><button id="toggle" class="button" type="button">Start</button><button id="restart" class="button secondary" type="button">New game</button></div>
+    <p id="status" class="status" role="status" aria-live="polite">Reach the finish line. Pick up upgrades on the road!</p>
+    <canvas id="game" class="road" width="420" height="480" tabindex="0" aria-label="Roadbreak road. Change lanes with Left and Right Arrow or by swiping. The car drives and shoots automatically."></canvas>
+    <div class="controls" role="group" aria-label="Change lanes">
+      <button class="button secondary" id="left" type="button" aria-label="Change to left lane">←</button>
+      <button class="button secondary" id="right" type="button" aria-label="Change to right lane">→</button>
+    </div>
+  </main>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const instructions = document.querySelector('header');
+    const status = document.getElementById('status');
+    const toggle = document.getElementById('toggle');
+    const distanceElement = document.getElementById('distance');
+    const healthElement = document.getElementById('health');
+    const killsElement = document.getElementById('kills');
+    const armorElement = document.getElementById('armor');
+    const width = 420;
+    const height = 480;
+    const finish = 1500;
+    const carY = 406;
+    const lanes = [95, 210, 325];
+    const upgrades = [
+      { kind: 'armor', label: 'ARMOR', color: '#38bdf8' },
+      { kind: 'rapid', label: 'RAPID', color: '#fbbf24' },
+      { kind: 'spread', label: 'SPREAD', color: '#c084fc' },
+      { kind: 'repair', label: 'REPAIR', color: '#4ade80' }
+    ];
+    let state, lane, carX, health, armor, kills, distance, lastStage, zombies, pickups, bullets, sparks;
+    let rapidUntil, spreadUntil, fireClock, zombieClock, pickupClock, invulnerable, flash, frame, lastTime, touchStart;
+
+    function fit() {
+      const scale = Math.min(window.devicePixelRatio || 1, 3);
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
+      draw();
+    }
+
+    function hud() {
+      distanceElement.textContent = Math.min(finish, Math.floor(distance));
+      healthElement.textContent = '♥ '.repeat(health).trim() || '—';
+      killsElement.textContent = kills;
+      armorElement.textContent = armor;
+      toggle.textContent = state === 'running' ? 'Pause' : state === 'paused' ? 'Resume' : 'Start';
+      toggle.disabled = state === 'won' || state === 'lost';
+      instructions.hidden = state !== 'ready';
+    }
+
+    function drawCar() {
+      ctx.save();
+      ctx.translate(carX, carY);
+      if (invulnerable > 0 && Math.floor(invulnerable * 10) % 2) ctx.globalAlpha = .55;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-24, -23, 9, 17);
+      ctx.fillRect(15, -23, 9, 17);
+      ctx.fillRect(-24, 19, 9, 17);
+      ctx.fillRect(15, 19, 9, 17);
+      ctx.fillStyle = armor ? '#38bdf8' : '#ef4444';
+      ctx.beginPath(); ctx.roundRect(-18, -31, 36, 66, 9); ctx.fill();
+      ctx.fillStyle = '#172d40';
+      ctx.beginPath(); ctx.roundRect(-14, -15, 28, 23, 5); ctx.fill();
+      ctx.fillStyle = '#fef08a';
+      ctx.fillRect(-15, -29, 9, 6);
+      ctx.fillRect(6, -29, 9, 6);
+      ctx.fillStyle = '#fca5a5';
+      ctx.fillRect(-15, 28, 8, 4);
+      ctx.fillRect(7, 28, 8, 4);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(-3, -41, 6, 17);
+      if (armor) {
+        ctx.strokeStyle = '#7dd3fc';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(0, 0, 42, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function draw() {
+      const zone = distance < 500 ? 0 : distance < 1000 ? 1 : 2;
+      ctx.fillStyle = ['#14532d', '#854d0e', '#312e81'][zone];
+      ctx.fillRect(0, 0, width, height);
+      for (let y = -50 + distance * 3 % 95; y < height + 50; y += 95) {
+        ctx.fillStyle = ['#166534', '#a16207', '#4338ca'][zone];
+        ctx.fillRect(4, y, 25, 34);
+        ctx.fillRect(391, y + 36, 25, 34);
+      }
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(32, 0, 356, height);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(35, 0, 4, height);
+      ctx.fillRect(381, 0, 4, height);
+      ctx.fillStyle = '#f8fafc';
+      for (let y = -60 + distance * 4 % 78; y < height; y += 78) {
+        ctx.fillRect(150, y, 4, 35);
+        ctx.fillRect(265, y, 4, 35);
+      }
+
+      for (const pickup of pickups) {
+        ctx.fillStyle = pickup.color;
+        ctx.beginPath(); ctx.roundRect(lanes[pickup.lane] - 42, pickup.y - 20, 84, 40, 10); ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 13px system-ui'; ctx.textAlign = 'center';
+        ctx.fillText(pickup.label, lanes[pickup.lane], pickup.y + 5);
+      }
+      for (const zombie of zombies) {
+        const x = lanes[zombie.lane];
+        ctx.fillStyle = zombie.hp > 1 ? '#65a30d' : '#86efac';
+        ctx.beginPath(); ctx.arc(x, zombie.y - 10, 11, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = zombie.hp > 1 ? '#365314' : '#166534';
+        ctx.fillRect(x - 12, zombie.y, 24, 18);
+        ctx.fillRect(x - 19, zombie.y + 3, 7, 5);
+        ctx.fillRect(x + 12, zombie.y + 3, 7, 5);
+        ctx.fillStyle = '#172d40';
+        ctx.fillRect(x - 6, zombie.y - 13, 3, 3);
+        ctx.fillRect(x + 4, zombie.y - 13, 3, 3);
+      }
+      for (const bullet of bullets) {
+        ctx.fillStyle = spreadUntil > distance / 32 ? '#c084fc' : '#fbbf24';
+        ctx.fillRect(lanes[bullet.lane] - 3, bullet.y - 10, 6, 14);
+      }
+      for (const spark of sparks) {
+        ctx.globalAlpha = Math.max(0, spark.life / .3);
+        ctx.fillStyle = spark.color;
+        ctx.beginPath(); ctx.arc(spark.x, spark.y, 13 * (1 - spark.life / .6), 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      drawCar();
+      if (flash > 0) {
+        ctx.fillStyle = `rgba(239, 68, 68, ${flash * .22})`;
+        ctx.fillRect(0, 0, width, height);
+      }
+      if (state !== 'running') {
+        ctx.fillStyle = 'rgba(15, 23, 42, .66)';
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 26px system-ui';
+        ctx.fillText(state === 'won' ? 'Road cleared!' : state === 'lost' ? 'Car wrecked!' : state === 'paused' ? 'Paused' : 'Ready to drive?', width / 2, 220);
+        ctx.font = '15px system-ui';
+        ctx.fillText(state === 'ready' ? 'Dodge, shoot & collect' : `${kills} zombies defeated`, width / 2, 250);
+      }
+    }
+
+    function moveLane(direction) {
+      if (state === 'ready') start();
+      if (state !== 'running') return;
+      lane = Math.max(0, Math.min(2, lane + direction));
+    }
+
+    function pause(message) {
+      if (state !== 'running') return;
+      state = 'paused';
+      cancelAnimationFrame(frame);
+      frame = null;
+      lastTime = null;
+      status.textContent = message;
+      hud();
+      draw();
+    }
+
+    function endGame(result, message) {
+      state = result;
+      frame = null;
+      status.textContent = message;
+      hud();
+      draw();
+    }
+
+    function spawnZombie() {
+      const first = Math.floor(Math.random() * 3);
+      const hp = distance > 900 && Math.random() < .3 ? 4 :
+        distance > 450 && Math.random() < .6 ? 3 : Math.random() < .3 ? 2 : 1;
+      zombies.push({ lane: first, y: -28, hp });
+      if (distance > 350 && Math.random() < .7) {
+        const second = (first + 1 + Math.floor(Math.random() * 2)) % 3;
+        zombies.push({ lane: second, y: -48, hp: distance > 900 && Math.random() < .3 ? 2 : 1 });
+      }
+    }
+
+    function spawnPickup() {
+      const upgrade = upgrades[Math.floor(Math.random() * upgrades.length)];
+      pickups.push({ ...upgrade, lane: Math.floor(Math.random() * 3), y: -35 });
+    }
+
+    function applyPickup(pickup) {
+      if (pickup.kind === 'armor') armor = Math.min(4, armor + 2);
+      if (pickup.kind === 'repair') health = Math.min(5, health + 2);
+      if (pickup.kind === 'rapid') rapidUntil = distance / 32 + 10;
+      if (pickup.kind === 'spread') spreadUntil = distance / 32 + 10;
+      status.textContent = `${pickup.label} collected!${pickup.kind === 'rapid' || pickup.kind === 'spread' ? ' Active for 10 seconds.' : ''}`;
+      hud();
+    }
+
+    function update(dt) {
+      const previousDistance = distance;
+      distance = Math.min(finish, distance + 32 * dt);
+      const time = distance / 32;
+      carX += (lanes[lane] - carX) * Math.min(1, dt * 14);
+      invulnerable = Math.max(0, invulnerable - dt);
+      flash = Math.max(0, flash - dt * 3);
+      for (const spark of sparks) spark.life -= dt;
+      sparks = sparks.filter((spark) => spark.life > 0);
+
+      zombieClock += dt;
+      const spawnInterval = Math.max(.47, .86 - distance / 3500);
+      if (zombieClock >= spawnInterval) {
+        zombieClock -= spawnInterval;
+        spawnZombie();
+      }
+      pickupClock += dt;
+      if (pickupClock >= 6.5) {
+        pickupClock -= 6.5;
+        spawnPickup();
+      }
+      fireClock += dt;
+      const firingInterval = time < rapidUntil ? .23 : .58;
+      if (fireClock >= firingInterval) {
+        fireClock -= firingInterval;
+        const firingLanes = time < spreadUntil ? [0, 1, 2] : [lane];
+        for (const shotLane of firingLanes) bullets.push({ lane: shotLane, y: carY - 42 });
+      }
+
+      const zombieSpeed = 140 + distance / 15;
+      for (const zombie of zombies) zombie.y += zombieSpeed * dt;
+      for (const pickup of pickups) pickup.y += 112 * dt;
+
+      for (let index = bullets.length - 1; index >= 0; index--) {
+        const bullet = bullets[index];
+        const previousY = bullet.y;
+        bullet.y -= 590 * dt;
+        const target = zombies.find((zombie) => zombie.lane === bullet.lane &&
+          previousY >= zombie.y - 15 && bullet.y <= zombie.y + 18);
+        if (target) {
+          bullets.splice(index, 1);
+          target.hp--;
+          sparks.push({ x: lanes[target.lane], y: target.y, life: .3, color: '#fbbf24' });
+          if (target.hp === 0) {
+            zombies.splice(zombies.indexOf(target), 1);
+            kills++;
+          }
+        } else if (bullet.y < -20) bullets.splice(index, 1);
+      }
+
+      for (let index = zombies.length - 1; index >= 0; index--) {
+        const zombie = zombies[index];
+        if (zombie.y < carY - 25) continue;
+        zombies.splice(index, 1);
+        if (Math.abs(lanes[zombie.lane] - carX) >= 30) continue;
+        kills++;
+        sparks.push({ x: lanes[lane], y: carY - 22, life: .3, color: '#fb7185' });
+        if (armor > 0) {
+          armor--;
+          status.textContent = 'Roadkill! Armor absorbed the hit.';
+        } else if (invulnerable <= 0) {
+          health--;
+          invulnerable = 1;
+          flash = 1;
+          status.textContent = 'Roadkill! Car damaged.';
+        } else status.textContent = 'Roadkill!';
+        hud();
+      }
+      zombies = zombies.filter((zombie) => zombie.y < height + 25);
+
+      for (let index = pickups.length - 1; index >= 0; index--) {
+        const pickup = pickups[index];
+        if (pickup.y < carY - 30) continue;
+        pickups.splice(index, 1);
+        if (Math.abs(lanes[pickup.lane] - carX) < 30) applyPickup(pickup);
+      }
+      if (health <= 0) return endGame('lost', `Your car broke down at ${Math.floor(distance)} m. ${kills} zombies defeated.`);
+      const stage = Math.floor(distance / 500);
+      if (stage > lastStage && distance < finish) {
+        lastStage = stage;
+        status.textContent = stage === 1 ? 'Out of town — more zombies ahead!' : 'The final stretch is crawling with zombies!';
+      }
+      if (distance >= finish) return endGame('won', `You reached 1,500 m! ${kills} zombies defeated.`);
+      if (Math.floor(previousDistance / 10) !== Math.floor(distance / 10)) hud();
+    }
+
+    function tick(timestamp) {
+      if (state !== 'running') return;
+      const dt = lastTime === null ? 0 : Math.min((timestamp - lastTime) / 1000, .033);
+      lastTime = timestamp;
+      update(dt);
+      if (state !== 'running') return;
+      draw();
+      frame = requestAnimationFrame(tick);
+    }
+
+    function start() {
+      if (state !== 'ready' && state !== 'paused') return;
+      state = 'running';
+      lastTime = null;
+      status.textContent = 'Switch lanes and collect upgrades!';
+      hud();
+      canvas.focus({ preventScroll: true });
+      frame = requestAnimationFrame(tick);
+    }
+
+    function reset() {
+      cancelAnimationFrame(frame);
+      frame = null;
+      lastTime = null;
+      touchStart = null;
+      state = 'ready';
+      lane = 1;
+      carX = lanes[lane];
+      health = 4;
+      armor = 0;
+      kills = 0;
+      distance = 0;
+      lastStage = 0;
+      zombies = [];
+      pickups = [];
+      bullets = [];
+      sparks = [];
+      rapidUntil = 0;
+      spreadUntil = 0;
+      invulnerable = 0;
+      flash = 0;
+      fireClock = 0;
+      zombieClock = .5;
+      pickupClock = 3;
+      status.textContent = 'Reach the finish line. Pick up upgrades on the road!';
+      hud();
+      draw();
+    }
+
+    toggle.addEventListener('click', () => state === 'running' ? pause('Paused. Press Resume to continue.') : start());
+    document.getElementById('restart').addEventListener('click', reset);
+    document.getElementById('left').addEventListener('click', () => moveLane(-1));
+    document.getElementById('right').addEventListener('click', () => moveLane(1));
+    document.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD'].includes(event.code)) return;
+      event.preventDefault();
+      if (!event.repeat) moveLane(event.code === 'ArrowLeft' || event.code === 'KeyA' ? -1 : 1);
+    });
+    canvas.addEventListener('pointerdown', (event) => {
+      if (state === 'ready') start();
+      if (state !== 'running') return;
+      event.preventDefault();
+      canvas.setPointerCapture(event.pointerId);
+      touchStart = { x: event.clientX, id: event.pointerId };
+    });
+    canvas.addEventListener('pointerup', (event) => {
+      if (!touchStart || event.pointerId !== touchStart.id) return;
+      const dx = event.clientX - touchStart.x;
+      touchStart = null;
+      if (Math.abs(dx) > 25) moveLane(Math.sign(dx));
+      else {
+        const rect = canvas.getBoundingClientRect();
+        const x = (event.clientX - rect.left) / rect.width * width;
+        lane = lanes.reduce((best, value, index) => Math.abs(value - x) < Math.abs(lanes[best] - x) ? index : best, lane);
+      }
+    });
+    canvas.addEventListener('pointercancel', () => { touchStart = null; });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) pause('Paused while hidden.'); });
+    window.addEventListener('blur', () => pause('Paused while inactive.'));
+    window.addEventListener('resize', fit);
+    reset();
+    fit();
+  </script>
+</body>
+</html>

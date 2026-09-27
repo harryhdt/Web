@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mortar Watch</title>
+  <link rel="stylesheet" href="/games/shared.css">
+  <style>
+    .shell { justify-content: flex-start; gap: 8px; padding: 10px; }
+    .arena { display: block; width: min(100%, 420px, calc((100dvh - 170px) * .875)); min-width: min(100%, 190px); height: auto; margin: 0 auto; border: 3px solid #475569; border-radius: 12px; background: #172d40; touch-action: none; }
+    .arena:focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+    .controls { position: sticky; bottom: 0; z-index: 1; display: flex; justify-content: center; gap: 20px; padding: 4px 0; background: #020617; }
+    .controls button { width: min(38%, 150px); min-height: 52px; font-size: 1.3rem; touch-action: none; user-select: none; }
+    .bar { gap: 6px; }
+    .stat { padding: 7px 9px; }
+    @media (max-width: 370px) { .stat { font-size: .85rem; } }
+    @media (max-height: 440px) {
+      .arena { width: min(100%, 175px); min-width: 0; }
+      .bar { gap: 4px; }
+      .bar .stat { padding: 5px 6px; font-size: .75rem; }
+      .bar .button { padding: 5px 8px; font-size: .75rem; }
+      .status { font-size: .82rem; line-height: 1.25; }
+    }
+    @media (max-height: 340px) and (min-width: 500px) {
+      .shell { width: 100%; max-width: none; min-height: 100dvh; display: grid; grid-template-columns: 1.2fr 1fr; grid-template-rows: auto auto auto auto; align-content: center; gap: 4px 8px; }
+      header:not([hidden]) { grid-column: 1 / -1; }
+      .bar { grid-column: 1; grid-row: 2; }
+      .status { grid-column: 1; grid-row: 3; }
+      .arena { grid-column: 2; grid-row: 2 / 5; width: min(100%, calc((100dvh - 20px) * .875)); min-width: 0; }
+      .controls { grid-column: 1; grid-row: 4; position: static; gap: 8px; }
+      .controls button { min-height: 44px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><h1>Mortar Watch</h1><p class="subtle">Survive 45 seconds. Move left or right to catch green upgrades, dodge red penalties, and let your crew fire at approaching zombies. Drag on the field or hold ← →.</p></header>
+    <div class="bar"><span class="stat">Crew <strong id="crew">2</strong></span><span class="stat">Power <strong id="power">1</strong></span><span class="stat">Rate <strong id="rate">1</strong></span><span class="stat">Base <strong id="base">3</strong></span><span class="stat">Time <strong id="time">45</strong>s</span><button id="toggle" class="button" type="button">Start</button><button id="restart" class="button secondary" type="button">New game</button></div>
+    <p id="status" class="status" role="status" aria-live="polite">Green gates help; red gates hurt. Pick a lane!</p>
+    <canvas id="game" class="arena" width="420" height="480" tabindex="0" aria-label="Zombie defense field. Move left or right to choose upgrade gates and avoid penalties. Mortars fire automatically."></canvas>
+    <div class="controls" role="group" aria-label="Move crew">
+      <button class="button secondary" type="button" data-hold="left" aria-label="Move left">←</button>
+      <button class="button secondary" type="button" data-hold="right" aria-label="Move right">→</button>
+    </div>
+  </main>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const instructions = document.querySelector('header');
+    const status = document.getElementById('status');
+    const toggle = document.getElementById('toggle');
+    const fields = Object.fromEntries(['crew', 'power', 'rate', 'base', 'time'].map((key) => [key, document.getElementById(key)]));
+    const width = 420;
+    const height = 480;
+    const defenseY = 408;
+    const duration = 45;
+    const held = { left: false, right: false };
+    const boosts = [
+      { label: '+2 CREW', effect: 'crew', delta: 2 },
+      { label: '+1 POWER', effect: 'power', delta: 1 },
+      { label: '+0.4 RATE', effect: 'rate', delta: 1 }
+    ];
+    const penalties = [
+      { label: '-1 CREW', effect: 'crew', delta: -1 },
+      { label: '-1 POWER', effect: 'power', delta: -1 },
+      { label: '-0.4 RATE', effect: 'rate', delta: -1 }
+    ];
+    let state, playerX, crew, power, rate, base, kills, elapsed, zombies, gates, shells, blasts;
+    let spawnClock, gateClock, fireClock, frame, lastTime, dragPointer;
+
+    function fit() {
+      const scale = Math.min(window.devicePixelRatio || 1, 3);
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
+      draw();
+    }
+
+    function hud() {
+      fields.crew.textContent = crew;
+      fields.power.textContent = power;
+      fields.rate.textContent = rate.toFixed(1).replace('.0', '');
+      fields.base.textContent = base;
+      fields.time.textContent = Math.max(0, Math.ceil(duration - elapsed));
+      toggle.textContent = state === 'running' ? 'Pause' : state === 'paused' ? 'Resume' : 'Start';
+      toggle.disabled = state === 'won' || state === 'lost';
+      instructions.hidden = state !== 'ready';
+    }
+
+    function drawSoldier(x, y, scale = 1) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+      ctx.fillStyle = '#2563eb';
+      ctx.fillRect(-8, -10, 16, 17);
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath(); ctx.arc(0, -15, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1e3a8a';
+      ctx.fillRect(-9, -21, 18, 5);
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(-2, -32, 4, 22);
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.fillStyle = '#172d40';
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(12, 0, width - 24, defenseY + 26);
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(12, 0, 7, defenseY + 26);
+      ctx.fillRect(width - 19, 0, 7, defenseY + 26);
+      ctx.fillStyle = '#94a3b8';
+      for (let y = -55 + (elapsed * 80 % 72); y < defenseY + 20; y += 72) {
+        ctx.fillRect(208, y, 4, 30);
+      }
+      ctx.fillStyle = '#0f766e';
+      ctx.fillRect(0, defenseY + 27, width, height - defenseY - 27);
+      ctx.fillStyle = '#34d399';
+      ctx.fillRect(0, defenseY + 25, width, 4);
+
+      for (const gate of gates) {
+        for (const option of gate.options) {
+          ctx.fillStyle = option.delta > 0 ? 'rgba(16, 185, 129, .8)' : 'rgba(244, 63, 94, .8)';
+          ctx.beginPath(); ctx.roundRect(option.x, gate.y, 180, 44, 9); ctx.fill();
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+          ctx.font = 'bold 17px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#fff';
+          ctx.fillText(option.label, option.x + 90, gate.y + 28);
+        }
+      }
+
+      for (const zombie of zombies) {
+        ctx.fillStyle = '#86efac';
+        ctx.beginPath(); ctx.arc(zombie.x, zombie.y - 11, 10, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#166534';
+        ctx.fillRect(zombie.x - 9, zombie.y, 18, 16);
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(zombie.x - 5, zombie.y - 13, 3, 3);
+        ctx.fillRect(zombie.x + 3, zombie.y - 13, 3, 3);
+        if (zombie.hp > 2) {
+          ctx.fillStyle = '#fecaca';
+          ctx.fillRect(zombie.x - 10, zombie.y - 25, 20, 3);
+        }
+      }
+
+      for (const shell of shells) {
+        const t = Math.min(1, shell.progress / shell.flight);
+        const x = shell.x + (shell.targetX - shell.x) * t;
+        const y = shell.y + (shell.targetY - shell.y) * t - Math.sin(t * Math.PI) * 48;
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+      }
+      for (const blast of blasts) {
+        ctx.fillStyle = `rgba(251, 191, 36, ${Math.max(0, blast.life / .26) * .55})`;
+        ctx.beginPath(); ctx.arc(blast.x, blast.y, blast.radius * (1 - blast.life / .52), 0, Math.PI * 2); ctx.fill();
+      }
+
+      const shown = Math.min(crew, 7);
+      for (let i = 0; i < shown; i++) drawSoldier(playerX + (i - (shown - 1) / 2) * 19, defenseY + 14, .85);
+      if (crew > shown) {
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 13px system-ui';
+        ctx.fillText(`+${crew - shown}`, playerX, defenseY + 42);
+      }
+
+      if (state !== 'running') {
+        ctx.fillStyle = 'rgba(15, 23, 42, .68)';
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center'; ctx.font = 'bold 25px system-ui';
+        ctx.fillText(state === 'won' ? 'You held the line!' : state === 'lost' ? 'Base overrun!' : state === 'paused' ? 'Paused' : 'Defend the base!', width / 2, 225);
+        ctx.font = '15px system-ui';
+        ctx.fillText(state === 'ready' ? 'Green = upgrade    Red = penalty' : `${kills} zombies stopped`, width / 2, 254);
+      }
+    }
+
+    function pause(message) {
+      if (state !== 'running') return;
+      state = 'paused';
+      cancelAnimationFrame(frame);
+      frame = null;
+      lastTime = null;
+      held.left = held.right = false;
+      status.textContent = message;
+      hud();
+      draw();
+    }
+
+    function endGame(result, message) {
+      state = result;
+      frame = null;
+      held.left = held.right = false;
+      status.textContent = message;
+      hud();
+      draw();
+    }
+
+    function spawnZombie() {
+      const toughness = elapsed > 25 ? 3 : elapsed > 12 ? 2 : 1;
+      zombies.push({
+        x: 32 + Math.random() * (width - 64), y: -25,
+        speed: 52 + Math.random() * 20 + elapsed * .28,
+        hp: toughness + (Math.random() < .2 ? 1 : 0)
+      });
+    }
+
+    function spawnGates() {
+      const index = Math.floor(Math.random() * boosts.length);
+      const good = boosts[index];
+      const bad = penalties[(index + Math.floor(Math.random() * 2)) % penalties.length];
+      const leftGood = Math.random() < .5;
+      gates.push({
+        y: -46,
+        options: leftGood ? [{ ...good, x: 16 }, { ...bad, x: 224 }] : [{ ...bad, x: 16 }, { ...good, x: 224 }]
+      });
+    }
+
+    function fire() {
+      const targets = zombies.filter((zombie) => zombie.y > 0 && zombie.y < defenseY - 25)
+        .sort((a, b) => b.y - a.y).slice(0, Math.min(crew, 7));
+      targets.forEach((target, index) => {
+        shells.push({
+          x: playerX + (index - (targets.length - 1) / 2) * 15,
+          y: defenseY - 24,
+          targetX: target.x,
+          targetY: Math.min(defenseY - 30, target.y + target.speed * .37),
+          progress: 0,
+          flight: .42
+        });
+      });
+    }
+
+    function explode(shell) {
+      const radius = 26 + power * 4;
+      blasts.push({ x: shell.targetX, y: shell.targetY, radius, life: .26 });
+      for (const zombie of zombies) {
+        if (Math.hypot(zombie.x - shell.targetX, zombie.y - shell.targetY) > radius + 10) continue;
+        zombie.hp -= 1 + power;
+        if (zombie.hp <= 0) kills++;
+      }
+      zombies = zombies.filter((zombie) => zombie.hp > 0);
+    }
+
+    function applyGate(option) {
+      if (option.effect === 'crew') crew = Math.max(1, Math.min(12, crew + option.delta));
+      if (option.effect === 'power') power = Math.max(1, Math.min(5, power + option.delta));
+      if (option.effect === 'rate') rate = Math.max(.6, Math.min(3, rate + option.delta * .4));
+      status.textContent = option.delta > 0 ? `${option.label} — upgrade collected!` : `${option.label} — penalty!`;
+      hud();
+    }
+
+    function update(dt) {
+      elapsed += dt;
+      playerX = Math.max(40, Math.min(width - 40, playerX + (Number(held.right) - Number(held.left)) * 260 * dt));
+      spawnClock += dt;
+      if (spawnClock >= Math.max(.57, 1.05 - elapsed * .009)) {
+        spawnClock = 0;
+        spawnZombie();
+      }
+      gateClock += dt;
+      if (gateClock >= 7) { gateClock = 0; spawnGates(); }
+      fireClock += dt;
+      if (fireClock >= 1.05 / rate) { fireClock = 0; fire(); }
+
+      for (const zombie of zombies) zombie.y += zombie.speed * dt;
+      for (const gate of gates) {
+        gate.y += 84 * dt;
+        if (gate.y < defenseY - 22 || gate.y - 84 * dt >= defenseY - 22) continue;
+        const selected = gate.options.find((option) => playerX >= option.x && playerX <= option.x + 180);
+        if (selected) applyGate(selected);
+      }
+      gates = gates.filter((gate) => gate.y < defenseY + 35);
+
+      for (const shell of shells) {
+        shell.progress += dt;
+        if (shell.progress >= shell.flight) explode(shell);
+      }
+      shells = shells.filter((shell) => shell.progress < shell.flight);
+      for (const blast of blasts) blast.life -= dt;
+      blasts = blasts.filter((blast) => blast.life > 0);
+      const escaped = zombies.filter((zombie) => zombie.y >= defenseY + 7).length;
+      if (escaped) {
+        base = Math.max(0, base - escaped);
+        zombies = zombies.filter((zombie) => zombie.y < defenseY + 7);
+        status.textContent = `${escaped} ${escaped === 1 ? 'zombie reached' : 'zombies reached'} the base!`;
+        hud();
+      }
+      if (base <= 0) return endGame('lost', `Base overrun. You stopped ${kills} ${kills === 1 ? 'zombie' : 'zombies'}.`);
+      if (elapsed >= duration) return endGame('won', `Base defended! You stopped ${kills} ${kills === 1 ? 'zombie' : 'zombies'}.`);
+      if (Math.ceil(duration - elapsed) !== Number(fields.time.textContent)) hud();
+    }
+
+    function tick(timestamp) {
+      if (state !== 'running') return;
+      const dt = lastTime === null ? 0 : Math.min((timestamp - lastTime) / 1000, .033);
+      lastTime = timestamp;
+      update(dt);
+      if (state !== 'running') return;
+      draw();
+      frame = requestAnimationFrame(tick);
+    }
+
+    function start() {
+      if (state !== 'ready' && state !== 'paused') return;
+      state = 'running';
+      lastTime = null;
+      status.textContent = 'Catch green gates. Hold the line!';
+      hud();
+      canvas.focus({ preventScroll: true });
+      frame = requestAnimationFrame(tick);
+    }
+
+    function reset() {
+      cancelAnimationFrame(frame);
+      frame = null;
+      lastTime = null;
+      dragPointer = null;
+      held.left = held.right = false;
+      state = 'ready';
+      playerX = width / 2;
+      crew = 2;
+      power = 1;
+      rate = 1;
+      base = 3;
+      kills = 0;
+      elapsed = 0;
+      zombies = [];
+      gates = [];
+      shells = [];
+      blasts = [];
+      spawnClock = .5;
+      gateClock = 4;
+      fireClock = 0;
+      status.textContent = 'Green gates help; red gates hurt. Pick a lane!';
+      hud();
+      draw();
+    }
+
+    function drag(event) {
+      const rect = canvas.getBoundingClientRect();
+      playerX = Math.max(40, Math.min(width - 40, (event.clientX - rect.left) / rect.width * width));
+      draw();
+    }
+
+    toggle.addEventListener('click', () => state === 'running' ? pause('Paused. Press Resume to continue.') : start());
+    document.getElementById('restart').addEventListener('click', reset);
+    document.addEventListener('keydown', (event) => {
+      if (event.code === 'ArrowLeft' || event.code === 'ArrowRight' || event.code === 'KeyA' || event.code === 'KeyD') {
+        event.preventDefault();
+        if (state === 'ready') start();
+        if (event.code === 'ArrowLeft' || event.code === 'KeyA') held.left = true;
+        else held.right = true;
+      }
+    });
+    document.addEventListener('keyup', (event) => {
+      if (event.code === 'ArrowLeft' || event.code === 'KeyA') held.left = false;
+      if (event.code === 'ArrowRight' || event.code === 'KeyD') held.right = false;
+    });
+    for (const button of document.querySelectorAll('[data-hold]')) {
+      const direction = button.dataset.hold;
+      button.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        button.setPointerCapture(event.pointerId);
+        if (state === 'ready') start();
+        held[direction] = true;
+      });
+      const release = () => { held[direction] = false; };
+      button.addEventListener('pointerup', release);
+      button.addEventListener('pointercancel', release);
+      button.addEventListener('lostpointercapture', release);
+    }
+    canvas.addEventListener('pointerdown', (event) => {
+      if (state === 'ready') start();
+      if (state !== 'running') return;
+      event.preventDefault();
+      dragPointer = event.pointerId;
+      canvas.setPointerCapture(event.pointerId);
+      drag(event);
+    });
+    canvas.addEventListener('pointermove', (event) => { if (event.pointerId === dragPointer && state === 'running') drag(event); });
+    const stopDrag = (event) => { if (event.pointerId === dragPointer) dragPointer = null; };
+    canvas.addEventListener('pointerup', stopDrag);
+    canvas.addEventListener('pointercancel', stopDrag);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) pause('Paused while hidden.'); });
+    window.addEventListener('blur', () => pause('Paused while inactive.'));
+    window.addEventListener('resize', fit);
+    reset();
+    fit();
+  </script>
+</body>
+</html>
