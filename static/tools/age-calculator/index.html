@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Age Calculator</title><link rel="stylesheet" href="/tools/shared.css"></head>
+<body>
+  <main class="shell">
+    <header><h1>Age Calculator</h1><p class="subtle">Age in years, months and days.</p></header>
+    <div class="panel fields">
+      <label class="field">Date of birth<input id="birth" type="date"></label>
+      <label class="field">Age as of<input id="target" type="date"></label>
+    </div>
+    <div class="result" role="status" aria-live="polite"><p class="result-label">Age</p><strong class="result-value" id="result"></strong><p class="result-note" id="days"></p></div>
+  </main>
+  <script type="module">
+    import { calendarDifference, parseDate } from '/tools/shared.js';
+    const birthInput = document.getElementById('birth');
+    const targetInput = document.getElementById('target');
+    const result = document.getElementById('result');
+    const days = document.getElementById('days');
+    const today = new Date();
+    targetInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    function render() {
+      const birth = parseDate(birthInput.value);
+      const target = parseDate(targetInput.value);
+      const age = birth && target && birth <= target ? calendarDifference(birth, target) : null;
+      result.textContent = age ? `${age.years} years, ${age.months} months, ${age.days} days` : birth && target && birth > target ? 'Date of birth cannot be after the comparison date.' : 'Enter a valid date of birth to calculate age.';
+      result.classList.toggle('error', Boolean(birth && target && birth > target));
+      days.textContent = age ? `${age.totalDays.toLocaleString('en-US')} days lived` : '';
+    }
+    [birthInput, targetInput].forEach((input) => input.addEventListener('input', render));
+    render();
+  </script>
+</body>
+</html>

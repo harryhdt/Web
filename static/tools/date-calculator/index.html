@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Date Calculator</title><link rel="stylesheet" href="/tools/shared.css"></head>
+<body>
+  <main class="shell">
+    <header><h1>Date Calculator</h1><p class="subtle">Compare dates or shift by days.</p></header>
+    <div class="tabs" role="group" aria-label="Date operation">
+      <button type="button" data-mode="difference" aria-pressed="true">Between dates</button>
+      <button type="button" data-mode="offset" aria-pressed="false">Add / subtract days</button>
+    </div>
+    <div class="panel">
+      <label class="field"><span id="first-label">First date</span><input id="first" type="date"></label>
+      <label class="field" id="second-field">Second date<input id="second" type="date"></label>
+      <div class="fields" id="offset-fields" hidden>
+        <label class="field">Operation<select id="direction"><option value="add">Add days</option><option value="subtract">Subtract days</option></select></label>
+        <label class="field">Number of days<input id="offset" type="text" inputmode="numeric" value="30"></label>
+      </div>
+    </div>
+    <div class="result" role="status" aria-live="polite"><p class="result-label">Result</p><strong class="result-value" id="result"></strong><p class="result-note" id="detail"></p></div>
+  </main>
+  <script type="module">
+    import { calendarDifference, formatDate, parseDate, shiftDays } from '/tools/shared.js';
+    const firstInput = document.getElementById('first');
+    const secondInput = document.getElementById('second');
+    const offsetInput = document.getElementById('offset');
+    const direction = document.getElementById('direction');
+    const result = document.getElementById('result');
+    const detail = document.getElementById('detail');
+    let mode = 'difference';
+    function render() {
+      document.querySelectorAll('[data-mode]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.mode === mode)));
+      document.getElementById('first-label').textContent = mode === 'difference' ? 'First date' : 'Start date';
+      document.getElementById('second-field').hidden = mode !== 'difference';
+      document.getElementById('offset-fields').hidden = mode !== 'offset';
+      const first = parseDate(firstInput.value);
+      const second = parseDate(secondInput.value);
+      detail.textContent = '';
+      result.classList.remove('error');
+      if (mode === 'difference' && first && second) {
+        const difference = calendarDifference(first < second ? first : second, first < second ? second : first);
+        result.textContent = `${difference.totalDays.toLocaleString('en-US')} days`;
+        detail.textContent = `${difference.years} years, ${difference.months} months, ${difference.days} days (absolute difference)`;
+      } else if (mode === 'offset' && first) {
+        const text = offsetInput.value;
+        const offset = /^\d{1,6}$/.test(text) && Number(text) <= 365_000 ? Number(text) : null;
+        if (offset === null) result.textContent = 'Enter 0 to 365,000 whole days.';
+        else {
+          const shifted = shiftDays(first, (direction.value === 'add' ? 1 : -1) * offset);
+          result.textContent = shifted.getUTCFullYear() >= 1 && shifted.getUTCFullYear() <= 9999 ? formatDate(shifted) : 'Result is outside the supported year range (1–9999).';
+        }
+        result.classList.toggle('error', offset === null || result.textContent.startsWith('Result is outside'));
+      } else result.textContent = 'Enter valid dates to calculate a result.';
+    }
+    document.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => { mode = button.dataset.mode; render(); }));
+    [firstInput, secondInput, offsetInput, direction].forEach((input) => input.addEventListener('input', render));
+    render();
+  </script>
+</body>
+</html>

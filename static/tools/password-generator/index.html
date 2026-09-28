@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Password Generator</title><link rel="stylesheet" href="/tools/shared.css">
+  <style>.checkboxes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px; } .checkboxes label { display: flex; align-items: center; gap: 8px; } .password { margin-top: 8px; border-color: #404040 !important; background: #262626 !important; color: white !important; font-family: ui-monospace, SFMono-Regular, monospace !important; }</style>
+</head>
+<body>
+  <main class="shell">
+    <header><h1>Password Generator</h1><p class="subtle">Create a secure random password.</p></header>
+    <div class="panel">
+      <label class="field">Length (8–128)<input id="length" type="text" inputmode="numeric" value="16"></label>
+      <div class="checkboxes">
+        <label><input type="checkbox" id="lowercase" checked>Lowercase</label>
+        <label><input type="checkbox" id="uppercase" checked>Uppercase</label>
+        <label><input type="checkbox" id="digits" checked>Numbers</label>
+        <label><input type="checkbox" id="symbols" checked>Symbols</label>
+      </div>
+      <p class="error" id="error" hidden>Choose a length from 8 to 128 and at least one character set.</p>
+    </div>
+    <div class="controls"><button class="button" id="generate" type="button">Generate password</button><button class="button secondary" id="copy" type="button" disabled>Copy</button></div>
+    <div class="result"><label class="field" style="color: #a3a3a3">Password<input class="password" id="password" readonly placeholder="Generate a password"></label><p class="result-note">Generated locally using your browser’s cryptographic random source. Not stored or sent to a server.</p><p class="result-note" id="feedback" role="status" hidden></p></div>
+  </main>
+  <script type="module">
+    import { randomInteger } from '/tools/shared.js';
+    const groups = { lowercase: 'abcdefghjkmnpqrstuvwxyz', uppercase: 'ABCDEFGHJKMNPQRSTUVWXYZ', digits: '23456789', symbols: '!@#$%^&*()-_=+?' };
+    const lengthInput = document.getElementById('length');
+    const checkboxes = [...document.querySelectorAll('.checkboxes input')];
+    const password = document.getElementById('password');
+    const feedback = document.getElementById('feedback');
+    const generate = document.getElementById('generate');
+    const copy = document.getElementById('copy');
+    function selectedGroups() { return checkboxes.filter((input) => input.checked).map((input) => groups[input.id]); }
+    function length() {
+      const text = lengthInput.value;
+      return /^[1-9]\d{0,2}$/.test(text) && Number(text) >= 8 && Number(text) <= 128 ? Number(text) : null;
+    }
+    function clear() { password.value = ''; copy.disabled = true; feedback.hidden = true; }
+    function render() {
+      const valid = length() !== null && selectedGroups().length > 0;
+      document.getElementById('error').hidden = valid;
+      generate.disabled = !valid;
+    }
+    [lengthInput, ...checkboxes].forEach((input) => input.addEventListener('input', () => { clear(); render(); }));
+    generate.addEventListener('click', () => {
+      const count = length();
+      const selected = selectedGroups();
+      if (count === null || !selected.length) return;
+      const pool = selected.join('');
+      const characters = selected.map((group) => group[randomInteger(0, group.length - 1)]);
+      while (characters.length < count) characters.push(pool[randomInteger(0, pool.length - 1)]);
+      for (let index = characters.length - 1; index > 0; index--) {
+        const other = randomInteger(0, index);
+        [characters[index], characters[other]] = [characters[other], characters[index]];
+      }
+      password.value = characters.join('');
+      copy.disabled = false;
+      feedback.hidden = true;
+    });
+    copy.addEventListener('click', async () => {
+      if (!password.value) return;
+      try { await navigator.clipboard.writeText(password.value); feedback.textContent = 'Copied to clipboard.'; }
+      catch { feedback.textContent = 'Clipboard unavailable. Select and copy the password manually.'; }
+      feedback.hidden = false;
+    });
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Discount Calculator</title><link rel="stylesheet" href="/tools/shared.css"></head>
+<body>
+  <main class="shell">
+    <header><h1>Discount Calculator</h1><p class="subtle">Find the final price and savings after a discount.</p></header>
+    <div class="panel"><div class="fields">
+      <label class="field">Original price<input id="price" type="text" inputmode="decimal" value="100"></label>
+      <label class="field">Discount (%)<input id="discount" type="text" inputmode="decimal" value="20"></label>
+    </div><p class="subtle">Amounts use the same currency as your input and are rounded to two decimal places.</p></div>
+    <div class="result" role="status" aria-live="polite"><p class="result-label">Final price</p><strong class="result-value" id="result"></strong><p class="result-note" id="savings"></p></div>
+  </main>
+  <script>
+    const price = document.getElementById('price');
+    const discount = document.getElementById('discount');
+    const result = document.getElementById('result');
+    const savings = document.getElementById('savings');
+    const formatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    function render() {
+      const priceText = price.value.trim();
+      const discountText = discount.value.trim();
+      const priceNumber = /^(?:\d+(?:\.\d{0,2})?|\.\d{1,2})$/.test(priceText) && Number(priceText) <= 1_000_000_000_000 ? Number(priceText) : null;
+      const discountNumber = /^(?:\d+\.?\d*|\.\d+)$/.test(discountText) && Number(discountText) <= 100 ? Number(discountText) : null;
+      price.setAttribute('aria-invalid', String(priceNumber === null));
+      discount.setAttribute('aria-invalid', String(discountNumber === null));
+      if (priceNumber === null || discountNumber === null) {
+        result.textContent = priceNumber === null ? 'Enter a price from 0 to 1,000,000,000,000 with up to two decimal places.' : 'Enter a discount from 0% to 100%.';
+        result.classList.add('error'); savings.textContent = ''; return;
+      }
+      const priceCents = Math.round(priceNumber * 100);
+      const savingsCents = Math.round(priceCents * discountNumber / 100);
+      result.classList.remove('error');
+      result.textContent = formatter.format((priceCents - savingsCents) / 100);
+      savings.textContent = `You save ${formatter.format(savingsCents / 100)}`;
+    }
+    price.addEventListener('input', render);
+    discount.addEventListener('input', render);
+    render();
+  </script>
+</body>
+</html>

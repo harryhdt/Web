@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculator</title>
+  <link rel="stylesheet" href="/tools/shared.css">
+  <style>
+    .shell { max-width: 480px; }
+    .display { padding: 14px; border-radius: 9px; background: #262626; color: white; text-align: right; }
+    .display small { display: block; min-height: 1.3em; color: #d4d4d4; }
+    .display strong { display: block; overflow-x: auto; font-size: 2rem; white-space: nowrap; }
+    .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .keys button { min-height: 48px; padding: 8px; border: 1px solid #e5e5e5; border-radius: 8px; background: white; font: inherit; font-size: 1.2rem; font-weight: 700; cursor: pointer; }
+    .keys button:hover { background: #e5e5e5; }
+    .keys [data-key="="] { grid-row: span 2; background: #2563eb; color: white; }
+    .keys [data-key="0"] { grid-column: span 2; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><h1>Calculator</h1><p class="subtle">Basic arithmetic</p></header>
+    <div class="display"><small id="operation"></small><strong id="display" role="status" aria-live="polite">0</strong></div>
+    <div class="keys" id="keys">
+      <button type="button" data-key="C" aria-label="Clear">C</button><button type="button" data-key="DEL" aria-label="Delete last digit">DEL</button><button type="button" data-key="÷" aria-label="Divide">÷</button><button type="button" data-key="×" aria-label="Multiply">×</button>
+      <button type="button" data-key="7">7</button><button type="button" data-key="8">8</button><button type="button" data-key="9">9</button><button type="button" data-key="−" aria-label="Subtract">−</button>
+      <button type="button" data-key="4">4</button><button type="button" data-key="5">5</button><button type="button" data-key="6">6</button><button type="button" data-key="+" aria-label="Add">+</button>
+      <button type="button" data-key="1">1</button><button type="button" data-key="2">2</button><button type="button" data-key="3">3</button><button type="button" data-key="=" aria-label="Equals">=</button>
+      <button type="button" data-key="0">0</button><button type="button" data-key="." aria-label="Decimal point">.</button>
+    </div>
+  </main>
+  <script>
+    let display = '0';
+    let storedValue = null;
+    let operator = null;
+    let startFresh = false;
+    let hasError = false;
+    const displayElement = document.getElementById('display');
+    const operationElement = document.getElementById('operation');
+    function render() {
+      displayElement.textContent = display;
+      operationElement.textContent = storedValue !== null && operator ? `${formatResult(storedValue)} ${operator}` : '';
+    }
+    function clear() { display = '0'; storedValue = null; operator = null; startFresh = false; hasError = false; }
+    function showError() { clear(); display = 'Error'; hasError = true; }
+    function formatResult(value) { return Number(value.toPrecision(12)).toString(); }
+    function calculate(left, right, operation) {
+      const result = operation === '+' ? left + right : operation === '−' ? left - right : operation === '×' ? left * right : right === 0 ? NaN : left / right;
+      return Number.isFinite(result) ? result : null;
+    }
+    function chooseOperator(nextOperator) {
+      if (hasError) return;
+      if (operator && storedValue !== null && !startFresh) {
+        const result = calculate(storedValue, Number(display), operator);
+        if (result === null) { showError(); return; }
+        display = formatResult(result);
+        storedValue = result;
+      } else if (storedValue === null) storedValue = Number(display);
+      operator = nextOperator;
+      startFresh = true;
+    }
+    function press(key) {
+      if (/^\d$/.test(key)) {
+        if (hasError) clear();
+        if (startFresh || display === '0') { display = key; startFresh = false; }
+        else if (display.length < 16) display += key;
+      } else if (key === '.') {
+        if (hasError) clear();
+        if (startFresh) { display = '0.'; startFresh = false; }
+        else if (!display.includes('.') && display.length < 16) display += '.';
+      } else if (key === 'C') clear();
+      else if (key === 'DEL') {
+        if (hasError || startFresh) clear();
+        else { display = display.length > 1 ? display.slice(0, -1) : '0'; if (display === '-') display = '0'; }
+      } else if (key === '=') {
+        if (!hasError && operator && storedValue !== null && !startFresh) {
+          const result = calculate(storedValue, Number(display), operator);
+          if (result === null) showError();
+          else { display = formatResult(result); storedValue = null; operator = null; startFresh = true; }
+        }
+      } else chooseOperator(key);
+      render();
+    }
+    document.getElementById('keys').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-key]');
+      if (button) press(button.dataset.key);
+    });
+  </script>
+</body>
+</html>

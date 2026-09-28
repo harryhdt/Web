@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>QR Code Generator</title>
+  <link rel="stylesheet" href="/tools/shared.css">
+  <link rel="preload" as="script" href="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" integrity="sha256-xUHvBjJ4hahBW8qN9gceFBibSFUzbe9PNttUvehITzY=" crossorigin="anonymous">
+  <style>#code { display: flex; width: fit-content; max-width: 100%; overflow: auto; padding: 12px; border-radius: 8px; background: white; } #code img, #code canvas { max-width: none; }</style>
+</head>
+<body>
+  <main class="shell">
+    <header><h1>QR Code Generator</h1><p class="subtle">Turn text or URLs into QR codes.</p></header>
+    <label class="field panel">Text or URL (up to 300 characters)<textarea id="input" rows="3" maxlength="300">https://example.com</textarea></label>
+    <button class="button" id="generate" type="button" disabled>Generate QR code</button>
+    <div class="result" role="status" aria-live="polite"><p class="result-label">QR code</p><p class="result-note" id="status">Loading QR code library from CDN…</p><div id="code" role="img" aria-label="Generated QR code" hidden></div><p class="result-note" id="save" hidden>Right-click the code to save the image.</p></div>
+  </main>
+  <script>
+    const input = document.getElementById('input');
+    const status = document.getElementById('status');
+    const code = document.getElementById('code');
+    const save = document.getElementById('save');
+    const generate = document.getElementById('generate');
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+    script.integrity = 'sha256-xUHvBjJ4hahBW8qN9gceFBibSFUzbe9PNttUvehITzY=';
+    script.crossOrigin = 'anonymous';
+    script.onload = () => {
+      generate.disabled = !window.QRCode;
+      status.textContent = window.QRCode ? 'Enter text and generate a QR code.' : 'QR code library could not initialize.';
+    };
+    script.onerror = () => { status.textContent = 'QR code library could not load. Check your connection.'; };
+    document.head.append(script);
+    generate.addEventListener('click', () => {
+      const text = input.value.trim();
+      if (!text || text.length > 300) { status.textContent = 'Enter 1 to 300 characters.'; return; }
+      code.replaceChildren();
+      try {
+        new window.QRCode(code, { text, width: 200, height: 200, correctLevel: window.QRCode.CorrectLevel.M });
+        status.textContent = '';
+        code.hidden = save.hidden = false;
+      } catch {
+        code.replaceChildren();
+        code.hidden = save.hidden = true;
+        status.textContent = 'Could not encode this text. Try a shorter value.';
+      }
+    });
+  </script>
+</body>
+</html>

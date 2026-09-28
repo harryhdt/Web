@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Random Number</title><link rel="stylesheet" href="/tools/shared.css"></head>
+<body>
+  <main class="shell">
+    <header><h1>Random Number</h1><p class="subtle">Pick a whole number in a range.</p></header>
+    <div class="panel"><div class="fields">
+      <label class="field">Minimum<input id="minimum" type="text" inputmode="numeric" value="1"></label>
+      <label class="field">Maximum<input id="maximum" type="text" inputmode="numeric" value="100"></label>
+    </div><p class="error" id="error" hidden>Use whole numbers from -1,000,000,000 to 1,000,000,000; minimum must not exceed maximum.</p></div>
+    <button class="button" id="generate" type="button">Generate number</button>
+    <div class="result" role="status" aria-live="polite"><p class="result-label">Random number</p><strong class="result-value" id="result">—</strong></div>
+  </main>
+  <script type="module">
+    import { randomInteger } from '/tools/shared.js';
+    const minimum = document.getElementById('minimum');
+    const maximum = document.getElementById('maximum');
+    const result = document.getElementById('result');
+    const generate = document.getElementById('generate');
+    function bounds() {
+      if (!/^-?\d+$/.test(minimum.value.trim()) || !/^-?\d+$/.test(maximum.value.trim())) return null;
+      const min = Number(minimum.value);
+      const max = Number(maximum.value);
+      return min >= -1_000_000_000 && max <= 1_000_000_000 && min <= max ? { min, max } : null;
+    }
+    function render() {
+      const valid = bounds() !== null;
+      generate.disabled = !valid;
+      document.getElementById('error').hidden = valid;
+    }
+    [minimum, maximum].forEach((input) => input.addEventListener('input', () => { result.textContent = '—'; render(); }));
+    generate.addEventListener('click', () => {
+      const range = bounds();
+      if (range) result.textContent = randomInteger(range.min, range.max).toLocaleString('en-US');
+    });
+    render();
+  </script>
+</body>
+</html>

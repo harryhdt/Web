@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Stopwatch</title><link rel="stylesheet" href="/tools/shared.css"></head>
+<body>
+  <main class="shell">
+    <header><h1>Stopwatch</h1><p class="subtle">Track elapsed time.</p></header>
+    <div class="result" role="timer" aria-live="off"><p class="result-label">Elapsed time</p><strong class="result-value mono" id="clock">00:00:00.00</strong></div>
+    <div class="controls"><button class="button" id="start" type="button">Start</button><button class="button secondary" id="reset" type="button">Reset</button></div>
+  </main>
+  <script>
+    let elapsedMs = 0;
+    let accumulatedMs = 0;
+    let startedAt = 0;
+    let interval = null;
+    const clock = document.getElementById('clock');
+    const startButton = document.getElementById('start');
+    function render() {
+      const centiseconds = Math.floor(elapsedMs / 10);
+      const hours = Math.floor(centiseconds / 360_000);
+      const minutes = Math.floor(centiseconds / 6000) % 60;
+      const seconds = Math.floor(centiseconds / 100) % 60;
+      clock.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(centiseconds % 100).padStart(2, '0')}`;
+      startButton.textContent = interval ? 'Pause' : elapsedMs > 0 ? 'Resume' : 'Start';
+    }
+    startButton.addEventListener('click', () => {
+      if (interval) {
+        accumulatedMs += performance.now() - startedAt;
+        elapsedMs = accumulatedMs;
+        clearInterval(interval);
+        interval = null;
+      } else {
+        startedAt = performance.now();
+        interval = setInterval(() => { elapsedMs = accumulatedMs + performance.now() - startedAt; render(); }, 20);
+      }
+      render();
+    });
+    document.getElementById('reset').addEventListener('click', () => {
+      clearInterval(interval); interval = null; accumulatedMs = elapsedMs = 0; render();
+    });
+  </script>
+</body>
+</html>

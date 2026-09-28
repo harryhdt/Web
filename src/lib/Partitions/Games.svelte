@@ -1,96 +1,96 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import IconClose from '$lib/Icons/IconClose.svelte';
 
 	const games = [
 		{
 			slug: 'tic-tac-toe',
 			name: 'Tic-Tac-Toe',
-			description: 'Two players or play vs AI',
 			icon: '× ○',
 			color: 'bg-violet-600'
 		},
 		{
 			slug: '2048',
 			name: '2048',
-			description: 'Slide and merge matching tiles',
 			icon: '2048',
 			color: 'bg-amber-600'
 		},
 		{
 			slug: 'snake',
 			name: 'Snake',
-			description: 'Eat fruit and avoid your tail',
 			icon: '●→',
 			color: 'bg-emerald-600'
 		},
 		{
 			slug: 'minesweeper',
 			name: 'Minesweeper',
-			description: 'Find mines without setting one off',
 			icon: '✹',
 			color: 'bg-sky-600'
 		},
 		{
 			slug: 'sudoku',
 			name: 'Sudoku',
-			description: 'Fill a grid with digits 1 to 9',
 			icon: '1 9',
 			color: 'bg-indigo-600'
 		},
 		{
 			slug: 'memory-card',
 			name: 'Memory Card',
-			description: 'Match all the hidden pairs',
 			icon: '▣',
 			color: 'bg-pink-600'
 		},
 		{
 			slug: 'connect-four',
 			name: 'Connect Four',
-			description: 'Two players or play vs AI',
 			icon: '●○',
 			color: 'bg-cyan-700'
 		},
 		{
 			slug: 'sliding-puzzle',
 			name: 'Sliding Puzzle',
-			description: 'Slide numbered tiles into order',
 			icon: '▦',
 			color: 'bg-orange-600'
 		},
 		{
 			slug: 'flappy-bird',
 			name: 'Flappy Bird',
-			description: 'Fly between the pipes',
 			icon: '🐤',
 			color: 'bg-sky-600'
 		},
 		{
 			slug: 'pixel-trail',
 			name: 'Pixel Trail',
-			description: 'Jump, collect stars, reach the flag',
 			icon: '★',
 			color: 'bg-emerald-700'
 		},
 		{
 			slug: 'mortar-watch',
 			name: 'Mortar Watch',
-			description: 'Defend against zombies and choose upgrades',
 			icon: '◎',
 			color: 'bg-rose-700'
 		},
 		{
 			slug: 'roadbreak',
 			name: 'Roadbreak',
-			description: 'Drive, shoot zombies, and collect road upgrades',
 			icon: '🚗',
 			color: 'bg-red-600'
 		}
 	] as const;
 	let selectedGame = $state<(typeof games)[number] | null>(null);
 	let root: HTMLDivElement;
+	let gameContainer = $state<HTMLDivElement | null>(null);
 
-	async function backToGames() {
+	async function openGame(game: (typeof games)[number]) {
+		selectedGame = game;
+		await tick();
+		await gameContainer?.requestFullscreen();
+	}
+
+	async function closeGame() {
+		if (document.fullscreenElement === gameContainer) {
+			await document.exitFullscreen();
+			return;
+		}
 		const slug = selectedGame?.slug;
 		selectedGame = null;
 		await tick();
@@ -103,31 +103,22 @@
 	bind:this={root}
 >
 	{#if selectedGame}
-		<div class="flex min-w-0 shrink-0 items-center gap-3 border-b border-neutral-200 pb-2">
+		<div
+			class="relative min-h-32 min-w-0 flex-1 overflow-hidden rounded-lg bg-slate-950 [&:fullscreen]:rounded-none"
+			bind:this={gameContainer}
+			onfullscreenchange={() => {
+				if (document.fullscreenElement !== gameContainer) void closeGame();
+			}}
+		>
 			<button
 				type="button"
-				aria-label="Back to games"
-				title="Back to games"
-				onclick={backToGames}
-				class="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full bg-neutral-100 text-neutral-700 transition-colors hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+				aria-label="Close game"
+				title="Close game"
+				onclick={closeGame}
+				class="absolute top-3 right-3 z-10 grid size-9 cursor-pointer place-items-center rounded-full bg-neutral-900/80 text-white transition-colors hover:bg-neutral-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
 			>
-				<svg
-					aria-hidden="true"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					class="size-5"
-				>
-					<path d="m15 18-6-6 6-6" stroke-linecap="round" stroke-linejoin="round" />
-				</svg>
+				<IconClose class="size-5" />
 			</button>
-			<div class="min-w-0">
-				<p class="text-xs font-semibold text-neutral-500">Games</p>
-				<h4 class="truncate text-lg font-semibold text-neutral-800">{selectedGame.name}</h4>
-			</div>
-		</div>
-		<div class="min-h-32 min-w-0 flex-1 overflow-hidden rounded-lg bg-slate-950">
 			<iframe
 				title="{selectedGame.name} game"
 				src="/games/{selectedGame.slug}/index.html"
@@ -140,39 +131,21 @@
 			></iframe>
 		</div>
 	{:else}
-		<div class="mx-auto flex w-full max-w-2xl flex-col gap-4 py-3">
-			<div>
-				<p class="text-xs font-bold tracking-[0.18em] text-violet-600 uppercase">Play something</p>
-				<h4 class="mt-1 text-2xl font-bold text-neutral-800">Choose a game</h4>
-				<p class="mt-1 text-sm text-neutral-500">A quick break, right here on your desktop.</p>
-			</div>
-			<div class="grid grid-cols-1 gap-3 @sm/games:grid-cols-2">
+		<div class="w-full py-3">
+			<div class="flex flex-wrap items-start justify-start gap-x-2 gap-y-4">
 				{#each games as game (game.slug)}
 					<button
 						type="button"
 						data-game={game.slug}
-						onclick={() => (selectedGame = game)}
+						onclick={() => openGame(game)}
 						data-umami-event="Games > {game.name}"
-						class="group flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-3 text-left shadow-sm transition-colors hover:border-violet-400 hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+						class="group flex w-24 shrink-0 cursor-pointer flex-col items-center gap-2 rounded-xl p-1 text-center transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 @sm/games:w-28"
 					>
 						<span
-							class="grid size-12 shrink-0 place-items-center rounded-xl p-2 text-base font-bold text-white shadow-sm {game.color}"
+							class="grid size-16 shrink-0 place-items-center rounded-xl text-lg font-bold text-white shadow-sm @sm/games:size-20 {game.color}"
 							aria-hidden="true">{game.icon}</span
 						>
-						<span class="min-w-0 flex-1">
-							<span class="block text-base font-bold text-neutral-800">{game.name}</span>
-							<span class="mt-1 block text-xs text-neutral-500">{game.description}</span>
-						</span>
-						<svg
-							aria-hidden="true"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							class="hidden size-5 shrink-0 text-violet-500 transition-transform group-hover:translate-x-1 @xs/games:block"
-						>
-							<path d="m9 6 6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
+						<span class="text-sm font-semibold text-neutral-800">{game.name}</span>
 					</button>
 				{/each}
 			</div>

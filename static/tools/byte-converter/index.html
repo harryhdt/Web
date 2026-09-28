@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Byte Converter</title><link rel="stylesheet" href="/tools/shared.css">
+</head>
+<body>
+  <main class="shell">
+    <header><h1>Byte Converter</h1><p class="subtle">Convert between SI and IEC storage units.</p></header>
+    <div class="panel">
+      <p>Unit system</p>
+      <div class="tabs" role="group" aria-label="Unit system">
+        <button type="button" data-system="SI" aria-pressed="true">SI · 1000</button>
+        <button type="button" data-system="IEC" aria-pressed="false">IEC · 1024</button>
+      </div>
+      <label class="field">Amount<input id="amount" type="text" inputmode="decimal" value="1000"></label>
+      <div class="fields">
+        <label class="field">From<select id="from"></select></label>
+        <label class="field">To<select id="to"></select></label>
+      </div>
+    </div>
+    <div class="result" role="status" aria-live="polite"><p class="result-label">Result</p><strong class="result-value" id="result"></strong><p class="result-note" id="note"></p></div>
+  </main>
+  <script type="module">
+    import { formatValue } from '/tools/shared.js';
+    const systems = { SI: { base: 1000, units: ['B', 'kB', 'MB', 'GB', 'TB'] }, IEC: { base: 1024, units: ['B', 'KiB', 'MiB', 'GiB', 'TiB'] } };
+    const amount = document.getElementById('amount');
+    const from = document.getElementById('from');
+    const to = document.getElementById('to');
+    const result = document.getElementById('result');
+    let system = 'SI';
+    function render() {
+      const value = amount.value.trim();
+      const number = /^(?:\d+\.?\d*|\.\d+)$/.test(value) ? Number(value) : null;
+      const bytes = number === null ? null : number * systems[system].base ** Number(from.value);
+      const converted = bytes === null ? null : bytes / systems[system].base ** Number(to.value);
+      result.textContent = converted !== null && Number.isFinite(converted) && Number.isFinite(bytes) ? `${formatValue(converted)} ${systems[system].units[Number(to.value)]}` : number === null ? 'Enter a non-negative decimal number.' : 'Value is too large to convert.';
+      result.classList.toggle('error', converted === null || !Number.isFinite(converted) || !Number.isFinite(bytes));
+      document.getElementById('note').textContent = system === 'SI' ? '1 kB = 1000 B · B through TB' : '1 KiB = 1024 B · B through TiB';
+    }
+    function setSystem(next) {
+      system = next;
+      document.querySelectorAll('[data-system]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.system === next)));
+      for (const [select, index] of [[from, 0], [to, 1]]) {
+        select.replaceChildren(...systems[system].units.map((unit, position) => new Option(unit, position)));
+        select.value = String(index);
+      }
+      render();
+    }
+    document.querySelectorAll('[data-system]').forEach((button) => button.addEventListener('click', () => setSystem(button.dataset.system)));
+    [amount, from, to].forEach((field) => field.addEventListener('input', render));
+    setSystem('SI');
+  </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Temperature Converter</title><link rel="stylesheet" href="/tools/shared.css"></head>
+<body>
+  <main class="shell">
+    <header><h1>Temperature Converter</h1><p class="subtle">Celsius, Fahrenheit and Kelvin.</p></header>
+    <div class="panel"><label class="field">Temperature<input id="amount" type="text" inputmode="decimal" value="0"></label>
+      <div class="fields"><label class="field">From<select id="from"><option>°C</option><option>°F</option><option>K</option></select></label>
+        <label class="field">To<select id="to"><option>°C</option><option selected>°F</option><option>K</option></select></label></div>
+    </div>
+    <div class="result" role="status" aria-live="polite"><p class="result-label">Result</p><strong class="result-value" id="result"></strong></div>
+  </main>
+  <script type="module">
+    import { formatValue } from '/tools/shared.js';
+    const amount = document.getElementById('amount');
+    const from = document.getElementById('from');
+    const to = document.getElementById('to');
+    const result = document.getElementById('result');
+    function render() {
+      const value = amount.value.trim();
+      const number = /^-?(?:\d+\.?\d*|\.\d+)$/.test(value) ? Number(value) : null;
+      const kelvin = number === null ? null : from.value === '°C' ? number + 273.15 : from.value === '°F' ? (number + 459.67) * 5 / 9 : number;
+      const safeKelvin = kelvin === null || kelvin < -1e-9 ? null : Math.max(0, kelvin);
+      const converted = safeKelvin === null ? null : to.value === '°C' ? safeKelvin - 273.15 : to.value === '°F' ? safeKelvin * 9 / 5 - 459.67 : safeKelvin;
+      result.textContent = converted !== null && Number.isFinite(converted) ? `${Math.abs(converted) < 1e-10 ? '0' : formatValue(converted, 10)} ${to.value}` : number === null ? 'Enter a valid temperature.' : kelvin < -1e-9 ? 'Temperature cannot be below absolute zero.' : 'Value is too large to convert.';
+      result.classList.toggle('error', converted === null || !Number.isFinite(converted));
+    }
+    [amount, from, to].forEach((field) => field.addEventListener('input', render));
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Length Converter</title><link rel="stylesheet" href="/tools/shared.css"></head>
+<body>
+  <main class="shell">
+    <header><h1>Length Converter</h1><p class="subtle">Metric, imperial and miles.</p></header>
+    <div class="panel"><label class="field">Length<input id="amount" type="text" inputmode="decimal" value="1"></label>
+      <div class="fields"><label class="field">From<select id="from"></select></label><label class="field">To<select id="to"></select></label></div>
+    </div>
+    <div class="result" role="status" aria-live="polite"><p class="result-label">Result</p><strong class="result-value" id="result"></strong></div>
+  </main>
+  <script type="module">
+    import { formatValue } from '/tools/shared.js';
+    const units = { mm: ['Millimeters (mm)', .001], cm: ['Centimeters (cm)', .01], m: ['Meters (m)', 1], km: ['Kilometers (km)', 1000], in: ['Inches (in)', .0254], ft: ['Feet (ft)', .3048], yd: ['Yards (yd)', .9144], mi: ['Miles (mi)', 1609.344] };
+    const amount = document.getElementById('amount');
+    const from = document.getElementById('from');
+    const to = document.getElementById('to');
+    const result = document.getElementById('result');
+    for (const select of [from, to]) select.replaceChildren(...Object.entries(units).map(([symbol, unit]) => new Option(unit[0], symbol)));
+    from.value = 'km'; to.value = 'mi';
+    function render() {
+      const value = amount.value.trim();
+      const number = /^(?:\d+\.?\d*|\.\d+)$/.test(value) ? Number(value) : null;
+      const converted = number === null ? null : number * units[from.value][1] / units[to.value][1];
+      result.textContent = converted !== null && Number.isFinite(converted) ? `${formatValue(converted)} ${to.value}` : number === null ? 'Enter a non-negative decimal number.' : 'Value is too large to convert.';
+      result.classList.toggle('error', converted === null || !Number.isFinite(converted));
+    }
+    [amount, from, to].forEach((field) => field.addEventListener('input', render));
+    render();
+  </script>
+</body>
+</html>
